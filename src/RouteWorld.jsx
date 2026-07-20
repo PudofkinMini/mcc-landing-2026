@@ -1,7 +1,11 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Billboard, Float, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
+
+const MOBILE_BREAKPOINT = 800
+const DESKTOP_VERTICAL_FOV = 35
+const MOBILE_HORIZONTAL_FOV = 54
 
 const palette = {
   ink: '#13282b',
@@ -69,14 +73,33 @@ function CameraRig({ scrollProgress }) {
     { position: [-12.5, 18.8, 24.5], target: [0, 0.8, 0] },
   ]
   const mobileViews = [
-    { position: [-7.8, 16.5, 23.8], target: [-6.4, 0, 0] },
+    { position: [-5.2, 16.5, 25.8], target: [0, 0, 0] },
     { position: [-0.2, 20, 28], target: [0, 0.2, 0] },
-    { position: [7.8, 16.5, 23.8], target: [6.4, 0, 0] },
+    { position: [5.2, 16.5, 25.8], target: [0, 0, 0] },
     { position: [0.5, 23, 33], target: [0, 0.6, 0] },
   ]
 
+  useEffect(() => {
+    if (!camera.isPerspectiveCamera) return
+
+    // On portrait screens, preserve a wide horizontal view so the platform fits
+    // without reducing the canvas's full-viewport height.
+    const aspect = size.width / Math.max(size.height, 1)
+    const horizontalFov = THREE.MathUtils.degToRad(MOBILE_HORIZONTAL_FOV)
+    const mobileVerticalFov = THREE.MathUtils.radToDeg(
+      2 * Math.atan(Math.tan(horizontalFov / 2) / aspect),
+    )
+    const nextFov =
+      size.width <= MOBILE_BREAKPOINT
+        ? THREE.MathUtils.clamp(mobileVerticalFov, DESKTOP_VERTICAL_FOV, 100)
+        : DESKTOP_VERTICAL_FOV
+
+    camera.fov = nextFov
+    camera.updateProjectionMatrix()
+  }, [camera, size.height, size.width])
+
   useFrame((_, delta) => {
-    const views = size.width < 720 ? mobileViews : desktopViews
+    const views = size.width <= MOBILE_BREAKPOINT ? mobileViews : desktopViews
     const viewProgress = scrollProgress * (views.length - 1)
     const startIndex = Math.min(views.length - 2, Math.floor(viewProgress))
     const viewMix = viewProgress - startIndex
