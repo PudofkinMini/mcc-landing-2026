@@ -1,7 +1,7 @@
 {
-  "name": "mcc-route-landing",
+  "name": "mobilecom-ras-site",
   "version": "1.0.0",
-  "description": "Interactive route accounting software landing page",
+  "description": "MobileCom route accounting software marketing site",
   "type": "module",
   "scripts": {
     "dev": "vite",

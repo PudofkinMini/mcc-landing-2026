@@ -1,48 +1,190 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Loader } from '@react-three/drei'
 import { RouteWorld } from './RouteWorld'
 
 const stages = [
   {
-    eyebrow: '01 / Dispatch',
-    title: 'Start with your way.',
-    text: 'Placeholder copy for the first step in your route story.',
+    label: 'Configure',
+    eyebrow: '01 / Configure',
+    title: 'Your operation. Your rules.',
+    text: 'M-LINX fits the contracts, pricing, routes, inventory, and exceptions that make your textile rental business yours.',
   },
   {
-    eyebrow: '02 / Service',
-    title: 'Every stop, understood.',
-    text: 'Placeholder copy for the second step in your route story.',
+    label: 'Deliver',
+    eyebrow: '02 / Deliver',
+    title: 'Every route, ready to respond.',
+    text: 'Give route teams the right customer information in the moment—and keep the plant and office in step as service changes.',
   },
   {
-    eyebrow: '03 / Return',
-    title: 'Bring it all together.',
-    text: 'Placeholder copy for the third step in your route story.',
+    label: 'Reconcile',
+    eyebrow: '03 / Reconcile',
+    title: 'Complexity, handled.',
+    text: 'From soil counts and cart loads to signatures and invoicing, the hard work happens once. The routine work simply happens.',
   },
   {
-    eyebrow: '04 / Results',
-    title: 'Keep every customer smiling.',
-    text: 'Placeholder copy for the fourth step in your route story.',
+    label: 'Decide',
+    eyebrow: '04 / Decide',
+    title: 'See today. Shape tomorrow.',
+    text: 'Turn live route activity and long-term operating history into clearer decisions for every level of your business.',
   },
 ]
 
+const modules = [
+  {
+    number: '01',
+    title: 'Route delivery',
+    text: 'Paperless manifests, delivery adjustments, signatures, notes, and electronic invoices—built for work in motion.',
+    tags: ['Mobile workflows', 'eForms', 'Proof of service'],
+  },
+  {
+    number: '02',
+    title: 'Inventory control',
+    text: 'Follow clean, soiled, and circulating inventory across plants, carts, trucks, and customer locations.',
+    tags: ['Soil tracking', 'Cart management', 'Barcode & RFID'],
+  },
+  {
+    number: '03',
+    title: 'Customer & billing',
+    text: 'Translate contract detail into accurate service and billing, including the pricing models your customers require.',
+    tags: ['Contracts', 'Flexible pricing', 'CRM'],
+  },
+  {
+    number: '04',
+    title: 'Routing & visibility',
+    text: 'Connect schedules, GPS activity, route progress, and exceptions in one dependable operating view.',
+    tags: ['Optimization', 'GPS breadcrumbs', 'Alerts'],
+  },
+  {
+    number: '05',
+    title: 'Production flow',
+    text: 'Coordinate load building, weight verification, garment identification, and plant-to-route readiness.',
+    tags: ['Load management', 'Labels', 'Plant visibility'],
+  },
+  {
+    number: '06',
+    title: 'Business intelligence',
+    text: 'Give leaders real-time answers and durable reporting without asking teams to build the same picture by hand.',
+    tags: ['Dashboards', 'Operational reporting', 'History'],
+  },
+]
+
+const industries = [
+  {
+    code: 'HC',
+    title: 'Healthcare',
+    text: 'Support high-volume linen programs where accountability, service consistency, and rapid issue resolution matter.',
+  },
+  {
+    code: 'FB',
+    title: 'Food & beverage',
+    text: 'Keep chef wear, table linen, mats, and recurring service aligned with the pace of every location.',
+  },
+  {
+    code: 'HO',
+    title: 'Hospitality',
+    text: 'Make complex property needs visible—from standing orders and special requests to pickup and reconciliation.',
+  },
+  {
+    code: 'IW',
+    title: 'Industrial & workwear',
+    text: 'Manage garments, labels, wearer changes, repairs, and route-level inventory without losing the customer view.',
+  },
+]
+
+const processSteps = [
+  ['Listen first', 'We map the operation you have, the friction you feel, and the business you intend to become.'],
+  ['Configure with purpose', 'We shape M-LINX around your workflows instead of forcing your teams into a generic template.'],
+  ['Roll out together', 'We work with the people who use the system, from the plant and route to the office and leadership team.'],
+  ['Keep evolving', 'A modular foundation lets you add capability, refine workflows, and respond as your operation changes.'],
+]
+
+const clampProgress = (progress) => Math.max(0, Math.min(1, progress))
+
 function LogoMark() {
   return (
-    <svg viewBox="0 0 38 38" aria-hidden="true">
-      <path d="M5 8.5 19 3l14 5.5v20L19 35 5 28.5z" />
-      <path d="m12 13 7-3 7 3v11l-7 3-7-3z" />
-      <path d="M5 8.5 19 15l14-6.5M19 15v20" />
+    <svg viewBox="0 0 42 42" aria-hidden="true">
+      <path className="logo-ring" d="M21 4.5a16.5 16.5 0 1 0 16.5 16.5" />
+      <path d="M11.5 25.5 18.8 18l5.2 5.1 8-8.1" />
+      <circle cx="11.5" cy="25.5" r="2" />
+      <circle cx="18.8" cy="18" r="2" />
+      <circle cx="24" cy="23.1" r="2" />
+      <circle cx="32" cy="15" r="2" />
     </svg>
   )
 }
 
-const clampProgress = (progress) => Math.max(0, Math.min(1, progress))
+function ArrowIcon() {
+  return (
+    <svg className="arrow-icon" viewBox="0 0 18 18" aria-hidden="true">
+      <path d="M3 9h11M10 5l4 4-4 4" />
+    </svg>
+  )
+}
+
+function Header({ menuOpen, setMenuOpen, currentPath }) {
+  return (
+    <header className="header">
+      <a className="brand" href="/" aria-label="MobileCom home">
+        <LogoMark />
+        <span>MobileCom</span>
+      </a>
+      <span className="brand-descriptor">Route accounting for textile rental</span>
+      <div className="header-actions">
+        <a className="text-link" href="/contact">
+          Start a conversation
+        </a>
+        <button
+          className={`menu-button ${menuOpen ? 'is-open' : ''}`}
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="site-menu"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        >
+          <span />
+          <span />
+        </button>
+      </div>
+      <nav
+        className={`menu-panel ${menuOpen ? 'is-open' : ''}`}
+        id="site-menu"
+        aria-hidden={!menuOpen}
+        aria-label="Primary navigation"
+      >
+        <p>Explore MobileCom</p>
+        {[
+          ['/', 'Home'],
+          ['/platform', 'Platform'],
+          ['/industries', 'Industries'],
+          ['/company', 'Company'],
+          ['/contact', 'Contact'],
+        ].map(([href, label], index) => (
+          <a
+            href={href}
+            key={href}
+            className={currentPath === href ? 'is-current' : ''}
+            onClick={() => setMenuOpen(false)}
+          >
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {label}
+          </a>
+        ))}
+        <div className="menu-contact">
+          <span>Talk to us directly</span>
+          <a href="tel:+18003928651">1 800 392 8651</a>
+          <a href="mailto:MCCMarketing@mobilecom.com">MCCMarketing@mobilecom.com</a>
+        </div>
+      </nav>
+    </header>
+  )
+}
 
 function StageNav({ activeStage, scrollProgress, setStage }) {
   const chapterProgress = scrollProgress * (stages.length - 1)
 
   return (
-    <nav className="stage-nav" aria-label="Animation chapters">
+    <nav className="stage-nav" aria-label="Route story chapters">
       {stages.map((stage, index) => {
         const lineProgress =
           index === stages.length - 1
@@ -56,13 +198,13 @@ function StageNav({ activeStage, scrollProgress, setStage }) {
             key={stage.eyebrow}
             onClick={() => setStage(index)}
             aria-current={activeStage === index ? 'step' : undefined}
-            aria-label={`Go to stage ${index + 1}: ${stage.title}`}
+            aria-label={`Go to chapter ${index + 1}: ${stage.title}`}
           >
             <span className="stage-number">{String(index + 1).padStart(2, '0')}</span>
             <span className="stage-line">
               <span className="stage-line-fill" style={{ transform: `scaleX(${lineProgress})` }} />
             </span>
-            <span className="stage-label">{stage.eyebrow.split(' / ')[1]}</span>
+            <span className="stage-label">{stage.label}</span>
           </button>
         )
       })}
@@ -70,137 +212,95 @@ function StageNav({ activeStage, scrollProgress, setStage }) {
   )
 }
 
-function App() {
-  const requestedStage = Number.parseInt(new URLSearchParams(window.location.search).get('stage'), 10)
-  const initialStage = Number.isInteger(requestedStage)
-    ? Math.max(0, Math.min(stages.length - 1, requestedStage))
-    : 0
-  const [scrollProgress, setScrollProgress] = useState(
-    initialStage / (stages.length - 1),
-  )
-  const [menuOpen, setMenuOpen] = useState(false)
-  const touchPosition = useRef(null)
+function HomeHero() {
+  const trackRef = useRef(null)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const activeStage = Math.min(
     stages.length - 1,
     Math.floor(scrollProgress * (stages.length - 1) + 0.5),
   )
 
-  const setStage = useCallback((next) => {
-    const stage = Math.max(0, Math.min(stages.length - 1, next))
-    setScrollProgress(stage / (stages.length - 1))
-  }, [])
-
   useEffect(() => {
-    const onKeyDown = (event) => {
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-        setStage(activeStage + 1)
-      }
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-        setStage(activeStage - 1)
-      }
+    let frame = 0
+    const updateProgress = () => {
+      frame = 0
+      if (!trackRef.current) return
+      const rect = trackRef.current.getBoundingClientRect()
+      const distance = Math.max(1, rect.height - window.innerHeight)
+      setScrollProgress(clampProgress(-rect.top / distance))
+    }
+    const requestUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateProgress)
     }
 
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeStage, setStage])
+    updateProgress()
+    window.addEventListener('scroll', requestUpdate, { passive: true })
+    window.addEventListener('resize', requestUpdate)
+    return () => {
+      window.removeEventListener('scroll', requestUpdate)
+      window.removeEventListener('resize', requestUpdate)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
 
-  const onWheel = (event) => {
-    const modeScale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1
-    setScrollProgress((progress) => clampProgress(progress + (event.deltaY * modeScale) / 1200))
-  }
-
-  const onTouchStart = (event) => {
-    touchPosition.current = event.touches[0].clientY
-  }
-
-  const onTouchMove = (event) => {
-    if (touchPosition.current === null) return
-    const nextPosition = event.touches[0].clientY
-    const distance = touchPosition.current - nextPosition
-    touchPosition.current = nextPosition
-    setScrollProgress((progress) => clampProgress(progress + distance / 900))
-  }
-
-  const onTouchEnd = () => {
-    touchPosition.current = null
+  const setStage = (index) => {
+    if (!trackRef.current) return
+    const rect = trackRef.current.getBoundingClientRect()
+    const trackTop = window.scrollY + rect.top
+    const distance = rect.height - window.innerHeight
+    window.scrollTo({
+      top: trackTop + (index / (stages.length - 1)) * distance,
+      behavior: 'smooth',
+    })
   }
 
   return (
-    <main
-      className={`site stage-${activeStage + 1}`}
-      onWheel={onWheel}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
-    >
-      <header className="header">
-        <a className="brand" href="/" aria-label="MCC home">
-          <LogoMark />
-          <span>MCC</span>
-        </a>
-        <span className="brand-descriptor">Route systems for textile rental</span>
-        <div className="header-actions">
-          <a className="text-link" href="#contact">
-            Start a conversation
-          </a>
-          <button
-            className="menu-button"
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-expanded={menuOpen}
-            aria-label="Toggle menu"
+    <section className="hero-track" ref={trackRef} aria-label="The M-LINX route story">
+      <div className={`hero-frame stage-${activeStage + 1}`}>
+        <div className="hero" aria-live="polite">
+          <div className="hero-kicker">
+            <span className="kicker-dot" />
+            Route accounting, made around you
+          </div>
+          <div className="hero-copy" key={activeStage}>
+            <p>{stages[activeStage].eyebrow}</p>
+            <h1>{stages[activeStage].title}</h1>
+            <span>{stages[activeStage].text}</span>
+          </div>
+        </div>
+
+        <div className="canvas-wrap" aria-hidden="true">
+          <Canvas
+            shadows
+            dpr={[1, 1.8]}
+            gl={{ antialias: true, alpha: true }}
+            camera={{ position: [-9, 9, 12], fov: 35 }}
           >
-            <span />
-            <span />
-          </button>
+            <Suspense fallback={null}>
+              <RouteWorld activeStage={activeStage} scrollProgress={scrollProgress} />
+              <Environment preset="city" environmentIntensity={0.22} />
+            </Suspense>
+          </Canvas>
         </div>
-      </header>
 
-      <section className="hero" aria-live="polite">
-        <div className="hero-kicker">
-          <span className="kicker-dot" />
-          Software that follows your operation
+        <StageNav
+          activeStage={activeStage}
+          scrollProgress={scrollProgress}
+          setStage={setStage}
+        />
+
+        <div className="scroll-hint">
+          <span>{activeStage === stages.length - 1 ? 'Keep exploring' : 'Scroll the route'}</span>
+          <svg viewBox="0 0 20 30" aria-hidden="true">
+            <rect x="1" y="1" width="18" height="28" rx="9" />
+            <circle cx="10" cy="8" r="2" />
+          </svg>
         </div>
-        <div className="hero-copy" key={activeStage}>
-          <p>{stages[activeStage].eyebrow}</p>
-          <h1>{stages[activeStage].title}</h1>
-          <span>{stages[activeStage].text}</span>
+
+        <div className="hero-proof">
+          <strong>15+</strong>
+          <span>years in field-service software</span>
         </div>
-      </section>
-
-      <div className="canvas-wrap" aria-hidden="true">
-        <Canvas
-          shadows
-          dpr={[1, 1.8]}
-          gl={{ antialias: true, alpha: true }}
-          camera={{ position: [-9, 9, 12], fov: 35 }}
-        >
-          <Suspense fallback={null}>
-            <RouteWorld activeStage={activeStage} scrollProgress={scrollProgress} />
-            <Environment preset="city" environmentIntensity={0.22} />
-          </Suspense>
-        </Canvas>
-      </div>
-
-      <StageNav activeStage={activeStage} scrollProgress={scrollProgress} setStage={setStage} />
-
-      <div className="scroll-hint">
-        <span>Scroll to move</span>
-        <svg viewBox="0 0 20 30" aria-hidden="true">
-          <rect x="1" y="1" width="18" height="28" rx="9" />
-          <circle cx="10" cy="8" r="2" />
-        </svg>
-      </div>
-
-      <div className={`menu-panel ${menuOpen ? 'is-open' : ''}`} aria-hidden={!menuOpen}>
-        <button type="button" onClick={() => setMenuOpen(false)}>
-          Close
-        </button>
-        <a href="#platform">Platform</a>
-        <a href="#industries">Industries</a>
-        <a href="#company">Company</a>
-        <a href="#contact">Contact</a>
       </div>
       <Loader
         containerStyles={{ background: '#e8eadc' }}
@@ -208,7 +308,503 @@ function App() {
         barStyles={{ background: '#f2563d', height: '2px' }}
         dataStyles={{ color: '#13282b', fontFamily: 'Arial, sans-serif', fontSize: '10px' }}
       />
-    </main>
+    </section>
+  )
+}
+
+function SectionIntro({ eyebrow, title, text, inverse = false }) {
+  return (
+    <div className={`section-intro ${inverse ? 'is-inverse' : ''}`}>
+      <p className="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      {text && <p className="section-lede">{text}</p>}
+    </div>
+  )
+}
+
+function ModuleGrid({ limit }) {
+  const displayedModules = limit ? modules.slice(0, limit) : modules
+  return (
+    <div className="module-grid">
+      {displayedModules.map((module) => (
+        <article className="module-card" key={module.number}>
+          <span className="card-number">{module.number}</span>
+          <h3>{module.title}</h3>
+          <p>{module.text}</p>
+          <ul aria-label={`${module.title} capabilities`}>
+            {module.tags.map((tag) => (
+              <li key={tag}>{tag}</li>
+            ))}
+          </ul>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function IndustriesGrid() {
+  return (
+    <div className="industry-grid">
+      {industries.map((industry) => (
+        <article className="industry-card" key={industry.code}>
+          <span>{industry.code}</span>
+          <div>
+            <h3>{industry.title}</h3>
+            <p>{industry.text}</p>
+          </div>
+          <ArrowIcon />
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function HomePage() {
+  return (
+    <>
+      <HomeHero />
+      <section className="manifesto ruled-section">
+        <div className="manifesto-aside">
+          <p className="eyebrow">One system. Your system.</p>
+          <span>Built for linen and textile rental</span>
+        </div>
+        <div className="manifesto-copy">
+          <h2>The route feels simple when everything behind it works.</h2>
+          <p>
+            M-LINX connects service, inventory, production, billing, and insight around the
+            way your business actually runs. We make the hard things manageable—and the
+            easy things nearly invisible.
+          </p>
+        </div>
+      </section>
+
+      <section className="principles dark-section">
+        <SectionIntro
+          eyebrow="Why MobileCom"
+          title="Built to bend. Engineered to hold."
+          text="A responsive platform and an experienced team give you room to operate now—and the foundation to grow on your terms."
+          inverse
+        />
+        <div className="principle-list">
+          {[
+            ['01', 'Responsive by design', 'Give every role the right next action and the live context to respond when the day changes.'],
+            ['02', 'Configured around you', 'Keep the workflows that make you distinct. Change the ones that hold your teams back.'],
+            ['03', 'Robust where it matters', 'Depend on one connected operating record from customer contract to final invoice.'],
+          ].map(([number, title, text]) => (
+            <article key={number}>
+              <span>{number}</span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="platform-preview ruled-section">
+        <SectionIntro
+          eyebrow="The M-LINX platform"
+          title="Every moving part, moving together."
+          text="A modular route accounting system for the full textile rental service cycle—from customer setup and plant preparation to delivery, reconciliation, and decision support."
+        />
+        <ModuleGrid limit={4} />
+        <a className="button-link" href="/platform">
+          Explore the platform <ArrowIcon />
+        </a>
+      </section>
+
+      <section className="insight-section">
+        <div className="insight-graphic" aria-hidden="true">
+          <div className="signal-orbit signal-orbit-one" />
+          <div className="signal-orbit signal-orbit-two" />
+          <div className="signal-core">
+            <span>LIVE</span>
+            <strong>12:42</strong>
+          </div>
+          <span className="signal-label label-one">Route status</span>
+          <span className="signal-label label-two">Inventory</span>
+          <span className="signal-label label-three">Exceptions</span>
+        </div>
+        <div className="insight-copy">
+          <p className="eyebrow">Information with a job to do</p>
+          <h2>Empower the people closest to the decision.</h2>
+          <p>
+            Route representatives can see what changed. Dispatch can see what needs attention.
+            Managers can see the operation as it unfolds. Leaders can see the patterns that
+            shape what comes next.
+          </p>
+          <div className="insight-pair">
+            <div>
+              <strong>Right now</strong>
+              <span>Live route, inventory, service, and exception visibility.</span>
+            </div>
+            <div>
+              <strong>Over time</strong>
+              <span>Consistent history for stronger operational and strategic decisions.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="industries-preview ruled-section">
+        <SectionIntro
+          eyebrow="Built for the work"
+          title="One industry. Many ways to serve it."
+          text="We focus on textile rental, then configure for the markets, customer commitments, and operating realities inside your business."
+        />
+        <IndustriesGrid />
+        <a className="button-link" href="/industries">
+          See industry solutions <ArrowIcon />
+        </a>
+      </section>
+
+      <section className="testimonial">
+        <p className="eyebrow">From the field</p>
+        <blockquote>
+          “Implementing Route Manager solves every one of our order entry and invoicing
+          issues. MobileCom’s technology significantly enhances our operational processes.”
+        </blockquote>
+        <cite>American Textile</cite>
+      </section>
+
+      <CtaBand />
+    </>
+  )
+}
+
+function PageHero({ eyebrow, title, text, accent }) {
+  return (
+    <section className="page-hero">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{text}</p>
+      </div>
+      <div className={`page-hero-mark mark-${accent}`} aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+    </section>
+  )
+}
+
+function PlatformPage() {
+  return (
+    <>
+      <PageHero
+        eyebrow="The M-LINX platform"
+        title="A route accounting system that fits the route you run."
+        text="Connect customer, route, inventory, production, and financial workflows in a modular platform configured around your textile rental operation."
+        accent="coral"
+      />
+      <section className="page-intro ruled-section">
+        <p className="eyebrow">Capability without clutter</p>
+        <h2>Start with what matters. Add what comes next.</h2>
+        <p>
+          M-LINX is designed as a connected suite, not a rigid bundle. We work with your
+          team to choose, configure, and evolve the capabilities that create the clearest
+          path from service activity to business result.
+        </p>
+      </section>
+      <section className="all-modules ruled-section">
+        <ModuleGrid />
+      </section>
+      <section className="workflow-section dark-section">
+        <SectionIntro
+          eyebrow="A connected service cycle"
+          title="From promise to proof."
+          text="Each step informs the next, creating one continuous view of what was expected, what happened, and what should happen now."
+          inverse
+        />
+        <div className="workflow-line">
+          {['Contract', 'Prepare', 'Load', 'Deliver', 'Reconcile', 'Learn'].map((step, index) => (
+            <div key={step}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <strong>{step}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="integration-band ruled-section">
+        <div>
+          <p className="eyebrow">Works with your ecosystem</p>
+          <h2>Connected where it counts.</h2>
+        </div>
+        <p>
+          Integrate M-LINX with the financial, HR, supply-chain, payment, and time-tracking
+          systems your business depends on. The goal is a clean flow of information—not
+          another isolated source of truth.
+        </p>
+      </section>
+      <CtaBand />
+    </>
+  )
+}
+
+function IndustriesPage() {
+  return (
+    <>
+      <PageHero
+        eyebrow="Linen & textile rental"
+        title="Made for your industry. Configured for your market."
+        text="Specialized route accounting for operations serving healthcare, hospitality, food service, and industrial customers."
+        accent="blue"
+      />
+      <section className="industries-detail ruled-section">
+        <SectionIntro
+          eyebrow="Markets we support"
+          title="Different service models. One adaptable core."
+          text="The details change by market, but the need for accurate service, controlled inventory, responsive teams, and trustworthy information does not."
+        />
+        <IndustriesGrid />
+      </section>
+      <section className="needs-section dark-section">
+        <SectionIntro
+          eyebrow="Designed for the details"
+          title="The exceptions are part of the system."
+          text="Your operation is defined by more than a standard delivery. M-LINX makes room for the real-world variables your teams manage every day."
+          inverse
+        />
+        <div className="needs-grid">
+          {[
+            'Customer-specific contracts',
+            'Item, weight & flat-rate pricing',
+            'Standing orders & adjustments',
+            'Clean and soil reconciliation',
+            'Wearer & garment tracking',
+            'Mats, carts & bulk inventory',
+            'Multi-plant operations',
+            'Service notes & signatures',
+          ].map((need) => (
+            <div key={need}>
+              <span />
+              {need}
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="promise-section ruled-section">
+        <span className="promise-number">01</span>
+        <div>
+          <p className="eyebrow">One operating promise</p>
+          <h2>Give every customer the service you designed for them.</h2>
+        </div>
+        <p>
+          Bring customer agreements, route execution, and operating visibility into one
+          system so your teams can deliver with confidence—even when requirements differ
+          from one stop to the next.
+        </p>
+      </section>
+      <CtaBand />
+    </>
+  )
+}
+
+function CompanyPage() {
+  return (
+    <>
+      <PageHero
+        eyebrow="About MobileCom"
+        title="Field-service experience. Textile-rental focus."
+        text="For more than 15 years, we have worked where operations, mobile teams, customers, and business systems meet."
+        accent="gold"
+      />
+      <section className="company-story ruled-section">
+        <div>
+          <p className="eyebrow">Our point of view</p>
+          <h2>Software should respect how work gets done.</h2>
+        </div>
+        <div className="story-copy">
+          <p>
+            No two textile rental operations are identical. Customer commitments vary.
+            Plants run differently. Route teams build their own hard-earned rhythm. Growth
+            introduces new needs without erasing the old ones.
+          </p>
+          <p>
+            That is why MobileCom starts with your operation. We combine a robust, modular
+            platform with practical implementation experience to create a system that is
+            distinctly yours—and ready to keep changing with you.
+          </p>
+        </div>
+      </section>
+      <section className="process-section">
+        <SectionIntro
+          eyebrow="How we work"
+          title="A partnership built for change."
+          text="The best system is not simply installed. It is understood, shaped, adopted, and continuously improved."
+        />
+        <div className="process-list">
+          {processSteps.map(([title, text], index) => (
+            <article key={title}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="values-section dark-section">
+        <div className="value-statement">
+          <p className="eyebrow">What guides us</p>
+          <h2>Clear enough for today. Capable enough for tomorrow.</h2>
+        </div>
+        <div className="value-list">
+          <div><strong>Listen closely</strong><span>The useful answer begins with the right operational question.</span></div>
+          <div><strong>Solve practically</strong><span>Technology earns its place by making work more reliable and understandable.</span></div>
+          <div><strong>Build durably</strong><span>Your system should stay valuable as teams, markets, and ambitions evolve.</span></div>
+        </div>
+      </section>
+      <CtaBand />
+    </>
+  )
+}
+
+function ContactPage() {
+  const onSubmit = (event) => {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    const subject = encodeURIComponent(`M-LINX conversation — ${data.get('company')}`)
+    const body = encodeURIComponent(
+      `Name: ${data.get('name')}\nCompany: ${data.get('company')}\nEmail: ${data.get('email')}\n\n${data.get('message')}`,
+    )
+    window.location.href = `mailto:MCCMarketing@mobilecom.com?subject=${subject}&body=${body}`
+  }
+
+  return (
+    <>
+      <PageHero
+        eyebrow="Start a conversation"
+        title="Tell us how your operation needs to move."
+        text="Bring us the workflow that is too manual, the question you cannot answer quickly, or the next stage of growth you are planning."
+        accent="coral"
+      />
+      <section className="contact-section ruled-section">
+        <div className="contact-details">
+          <p className="eyebrow">Talk with MobileCom</p>
+          <h2>Let’s make the complex feel clear.</h2>
+          <p>
+            Share a little about your operation. We will start with a focused conversation
+            about your goals, your current systems, and where M-LINX can create the most value.
+          </p>
+          <dl>
+            <div><dt>Call</dt><dd><a href="tel:+18003928651">1 800 392 8651</a></dd></div>
+            <div><dt>Email</dt><dd><a href="mailto:MCCMarketing@mobilecom.com">MCCMarketing@mobilecom.com</a></dd></div>
+            <div><dt>Location</dt><dd>Mississauga, Ontario, Canada</dd></div>
+          </dl>
+        </div>
+        <form className="contact-form" onSubmit={onSubmit}>
+          <label>
+            <span>Your name</span>
+            <input name="name" type="text" autoComplete="name" required />
+          </label>
+          <label>
+            <span>Company</span>
+            <input name="company" type="text" autoComplete="organization" required />
+          </label>
+          <label>
+            <span>Work email</span>
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <label>
+            <span>What would you like to improve?</span>
+            <textarea name="message" rows="5" required />
+          </label>
+          <button type="submit">
+            Compose your message <ArrowIcon />
+          </button>
+          <small>This button opens a prepared email in your default mail application.</small>
+        </form>
+      </section>
+    </>
+  )
+}
+
+function CtaBand() {
+  return (
+    <section className="cta-band">
+      <p className="eyebrow">Built for where you are going</p>
+      <h2>What should your route system make possible?</h2>
+      <a href="/contact">
+        Let’s talk <ArrowIcon />
+      </a>
+    </section>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-top">
+        <a className="brand footer-brand" href="/" aria-label="MobileCom home">
+          <LogoMark />
+          <span>MobileCom</span>
+        </a>
+        <p>Route accounting systems for linen and textile rental.</p>
+        <div className="footer-contact">
+          <a href="tel:+18003928651">1 800 392 8651</a>
+          <a href="mailto:MCCMarketing@mobilecom.com">MCCMarketing@mobilecom.com</a>
+        </div>
+      </div>
+      <div className="footer-links">
+        <nav aria-label="Footer navigation">
+          <a href="/platform">Platform</a>
+          <a href="/industries">Industries</a>
+          <a href="/company">Company</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <address>PO Box 53018 RPO Erin Mills, Mississauga, ON L5M 5H7, Canada</address>
+      </div>
+      <div className="footer-bottom">
+        <span>© {new Date().getFullYear()} Mobile Computing Corp. Inc.</span>
+        <span>M-LINX™ is a trademark of Mobile Computing Corp. Inc.</span>
+      </div>
+    </footer>
+  )
+}
+
+function NotFoundPage() {
+  return (
+    <section className="not-found">
+      <p className="eyebrow">404 / Route not found</p>
+      <h1>This stop isn’t on the manifest.</h1>
+      <a className="button-link" href="/">Return home <ArrowIcon /></a>
+    </section>
+  )
+}
+
+const pages = {
+  '/': { title: 'MobileCom — Route accounting built around you', component: HomePage },
+  '/platform': { title: 'M-LINX Platform — MobileCom', component: PlatformPage },
+  '/industries': { title: 'Textile Rental Industries — MobileCom', component: IndustriesPage },
+  '/company': { title: 'About MobileCom', component: CompanyPage },
+  '/contact': { title: 'Contact MobileCom', component: ContactPage },
+}
+
+function App() {
+  const currentPath = window.location.pathname.replace(/\/+$/, '') || '/'
+  const page = pages[currentPath]
+  const Page = page?.component || NotFoundPage
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    document.title = page?.title || 'Page not found — MobileCom'
+  }, [page])
+
+  useEffect(() => {
+    document.body.classList.toggle('menu-is-open', menuOpen)
+    return () => document.body.classList.remove('menu-is-open')
+  }, [menuOpen])
+
+  return (
+    <div className={`site ${currentPath === '/' ? 'is-home' : 'is-inner'}`}>
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentPath={currentPath} />
+      <main id="main-content">
+        <Page />
+      </main>
+      <Footer />
+    </div>
   )
 }
 
