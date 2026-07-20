@@ -36,40 +36,58 @@ function LogoMark() {
   )
 }
 
-function StageNav({ activeStage, setStage }) {
+const clampProgress = (progress) => Math.max(0, Math.min(1, progress))
+
+function StageNav({ activeStage, scrollProgress, setStage }) {
+  const chapterProgress = scrollProgress * (stages.length - 1)
+
   return (
     <nav className="stage-nav" aria-label="Animation chapters">
-      {stages.map((stage, index) => (
-        <button
-          className={`stage-button ${activeStage === index ? 'is-active' : ''}`}
-          type="button"
-          key={stage.eyebrow}
-          onClick={() => setStage(index)}
-          aria-current={activeStage === index ? 'step' : undefined}
-          aria-label={`Go to stage ${index + 1}: ${stage.title}`}
-        >
-          <span className="stage-number">{String(index + 1).padStart(2, '0')}</span>
-          <span className="stage-line">
-            <span className="stage-line-fill" />
-          </span>
-          <span className="stage-label">{stage.eyebrow.split(' / ')[1]}</span>
-        </button>
-      ))}
+      {stages.map((stage, index) => {
+        const lineProgress =
+          index === stages.length - 1
+            ? Number(chapterProgress >= index)
+            : clampProgress(chapterProgress - index)
+
+        return (
+          <button
+            className={`stage-button ${activeStage === index ? 'is-active' : ''}`}
+            type="button"
+            key={stage.eyebrow}
+            onClick={() => setStage(index)}
+            aria-current={activeStage === index ? 'step' : undefined}
+            aria-label={`Go to stage ${index + 1}: ${stage.title}`}
+          >
+            <span className="stage-number">{String(index + 1).padStart(2, '0')}</span>
+            <span className="stage-line">
+              <span className="stage-line-fill" style={{ transform: `scaleX(${lineProgress})` }} />
+            </span>
+            <span className="stage-label">{stage.eyebrow.split(' / ')[1]}</span>
+          </button>
+        )
+      })}
     </nav>
   )
 }
 
 function App() {
   const requestedStage = Number.parseInt(new URLSearchParams(window.location.search).get('stage'), 10)
-  const [activeStage, setActiveStage] = useState(
-    Number.isInteger(requestedStage) ? Math.max(0, Math.min(stages.length - 1, requestedStage)) : 0,
+  const initialStage = Number.isInteger(requestedStage)
+    ? Math.max(0, Math.min(stages.length - 1, requestedStage))
+    : 0
+  const [scrollProgress, setScrollProgress] = useState(
+    initialStage / (stages.length - 1),
   )
   const [menuOpen, setMenuOpen] = useState(false)
-  const wheelLock = useRef(false)
-  const touchStart = useRef(null)
+  const touchPosition = useRef(null)
+  const activeStage = Math.min(
+    stages.length - 1,
+    Math.floor(scrollProgress * (stages.length - 1) + 0.5),
+  )
 
   const setStage = useCallback((next) => {
-    setActiveStage(Math.max(0, Math.min(stages.length - 1, next)))
+    const stage = Math.max(0, Math.min(stages.length - 1, next))
+    setScrollProgress(stage / (stages.length - 1))
   }, [])
 
   useEffect(() => {
@@ -87,23 +105,24 @@ function App() {
   }, [activeStage, setStage])
 
   const onWheel = (event) => {
-    if (wheelLock.current || Math.abs(event.deltaY) < 10) return
-    wheelLock.current = true
-    setStage(activeStage + (event.deltaY > 0 ? 1 : -1))
-    window.setTimeout(() => {
-      wheelLock.current = false
-    }, 900)
+    const modeScale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1
+    setScrollProgress((progress) => clampProgress(progress + (event.deltaY * modeScale) / 1200))
   }
 
   const onTouchStart = (event) => {
-    touchStart.current = event.touches[0].clientY
+    touchPosition.current = event.touches[0].clientY
   }
 
-  const onTouchEnd = (event) => {
-    if (touchStart.current === null) return
-    const distance = touchStart.current - event.changedTouches[0].clientY
-    if (Math.abs(distance) > 45) setStage(activeStage + (distance > 0 ? 1 : -1))
-    touchStart.current = null
+  const onTouchMove = (event) => {
+    if (touchPosition.current === null) return
+    const nextPosition = event.touches[0].clientY
+    const distance = touchPosition.current - nextPosition
+    touchPosition.current = nextPosition
+    setScrollProgress((progress) => clampProgress(progress + distance / 900))
+  }
+
+  const onTouchEnd = () => {
+    touchPosition.current = null
   }
 
   return (
@@ -111,7 +130,9 @@ function App() {
       className={`site stage-${activeStage + 1}`}
       onWheel={onWheel}
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
     >
       <header className="header">
         <a className="brand" href="/" aria-label="MCC home">
@@ -156,13 +177,13 @@ function App() {
           camera={{ position: [-9, 9, 12], fov: 35 }}
         >
           <Suspense fallback={null}>
-            <RouteWorld activeStage={activeStage} />
+            <RouteWorld activeStage={activeStage} scrollProgress={scrollProgress} />
             <Environment preset="city" environmentIntensity={0.22} />
           </Suspense>
         </Canvas>
       </div>
 
-      <StageNav activeStage={activeStage} setStage={setStage} />
+      <StageNav activeStage={activeStage} scrollProgress={scrollProgress} setStage={setStage} />
 
       <div className="scroll-hint">
         <span>Scroll to move</span>

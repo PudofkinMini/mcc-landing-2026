@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Billboard, Float, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
@@ -19,45 +19,46 @@ const routes = [
   {
     color: palette.blue,
     points: [
-      [-9.45, 0.4],
-      [-7.3, 0.45],
-      [-5.4, -2.7],
-      [-3.0, -4],
-      [3.0, -4],
-      [5.4, -2.7],
-      [7.3, 0.45],
-      [9.45, 0.4],
+      [-11, -1],
+      [-8.4, -1.15],
+      [-5.5, -3.25],
+      [-2.2, -4],
+      [0, -4],
+      [2.2, -4],
+      [5.5, -3.25],
+      [8.4, -1.15],
+      [11, -1],
     ],
   },
   {
     color: palette.coral,
     points: [
-      [-9.45, 0],
-      [-7.2, 0],
+      [-11, 0],
+      [-8.2, 0],
       [-4.6, 0],
-      [-2.8, 0],
-      [2.8, 0],
+      [0, 0],
       [4.6, 0],
-      [7.2, 0],
-      [9.45, 0],
+      [8.2, 0],
+      [11, 0],
     ],
   },
   {
     color: palette.gold,
     points: [
-      [-9.45, -0.4],
-      [-7.3, -0.45],
-      [-5.4, 2.7],
-      [-3.0, 4],
-      [3.0, 4],
-      [5.4, 2.7],
-      [7.3, -0.45],
-      [9.45, -0.4],
+      [-11, 1],
+      [-8.4, 1.15],
+      [-5.5, 3.25],
+      [-2.2, 4],
+      [0, 4],
+      [2.2, 4],
+      [5.5, 3.25],
+      [8.4, 1.15],
+      [11, 1],
     ],
   },
 ]
 
-function CameraRig({ activeStage }) {
+function CameraRig({ scrollProgress }) {
   const { camera, pointer, size } = useThree()
   const target = useRef(new THREE.Vector3(-7, 0, 0))
 
@@ -75,15 +76,26 @@ function CameraRig({ activeStage }) {
   ]
 
   useFrame((_, delta) => {
-    const view = (size.width < 720 ? mobileViews : desktopViews)[activeStage]
-    const desiredPosition = new THREE.Vector3(...view.position)
+    const views = size.width < 720 ? mobileViews : desktopViews
+    const viewProgress = scrollProgress * (views.length - 1)
+    const startIndex = Math.min(views.length - 2, Math.floor(viewProgress))
+    const viewMix = viewProgress - startIndex
+    const startView = views[startIndex]
+    const endView = views[startIndex + 1]
+    const desiredPosition = new THREE.Vector3(...startView.position).lerp(
+      new THREE.Vector3(...endView.position),
+      viewMix,
+    )
     desiredPosition.x += pointer.x * 0.35
     desiredPosition.y += pointer.y * 0.15
     camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosition.x, 3.2, delta)
     camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosition.y, 3.2, delta)
     camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosition.z, 3.2, delta)
 
-    const desiredTarget = new THREE.Vector3(...view.target)
+    const desiredTarget = new THREE.Vector3(...startView.target).lerp(
+      new THREE.Vector3(...endView.target),
+      viewMix,
+    )
     target.current.x = THREE.MathUtils.damp(target.current.x, desiredTarget.x, 3.2, delta)
     target.current.y = THREE.MathUtils.damp(target.current.y, desiredTarget.y, 3.2, delta)
     target.current.z = THREE.MathUtils.damp(target.current.z, desiredTarget.z, 3.2, delta)
@@ -93,68 +105,41 @@ function CameraRig({ activeStage }) {
   return null
 }
 
-function RouteSegments({ segments, color, radius, opacity = 1 }) {
-  const mesh = useRef()
-
-  useLayoutEffect(() => {
-    const up = new THREE.Vector3(0, 1, 0)
-    const matrix = new THREE.Matrix4()
-    const quaternion = new THREE.Quaternion()
-
-    segments.forEach(({ start, end }, index) => {
-      const direction = end.clone().sub(start)
-      const midpoint = start.clone().add(end).multiplyScalar(0.5)
-      quaternion.setFromUnitVectors(up, direction.clone().normalize())
-      matrix.compose(midpoint, quaternion, new THREE.Vector3(radius, direction.length(), radius))
-      mesh.current.setMatrixAt(index, matrix)
-    })
-    mesh.current.instanceMatrix.needsUpdate = true
-    mesh.current.computeBoundingSphere()
-  }, [radius, segments])
-
-  return (
-    <instancedMesh ref={mesh} args={[null, null, segments.length]} frustumCulled={false}>
-      <cylinderGeometry args={[1, 1, 1, 10]} />
-      <meshStandardMaterial color={color} roughness={0.48} transparent opacity={opacity} />
-    </instancedMesh>
-  )
+function routeProgressAt(scrollProgress) {
+  // Dispatch starts in the first warehouse, service reaches the customer,
+  // and return finishes inside the destination warehouse.
+  if (scrollProgress <= 1 / 3) return scrollProgress * 1.5
+  if (scrollProgress <= 2 / 3) return 0.5 + (scrollProgress - 1 / 3) * 1.5
+  return 1
 }
 
-function RouteLine({ route, index, activeStage }) {
+function RouteLine({ route, scrollProgress }) {
   const geometry = useMemo(() => {
     // Keep the routes just above the beveled site slab and below each building bridge.
     const points = route.points.map(([x, z]) => new THREE.Vector3(x, 0.9, z))
     const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.32)
-    const samples = curve.getPoints(64)
-    return {
-      curve,
-      segments: samples.slice(0, -1).map((start, pointIndex) => ({
-        start,
-        end: samples[pointIndex + 1],
-      })),
-    }
+    const tube = new THREE.TubeGeometry(curve, 128, 0.065, 8, false)
+    tube.setDrawRange(0, 0)
+    return tube
   }, [route.points])
-  const marker = useRef()
-  const progress = useRef(0.015)
-  const targetProgress = [0.29, 0.69, 0.985, 1][activeStage]
+  const progress = useRef(routeProgressAt(scrollProgress))
+  const maxDrawCount = geometry.index.count
 
-  useFrame((state, delta) => {
-    progress.current = THREE.MathUtils.damp(progress.current, targetProgress, 2.3, delta)
-    const loopOffset = activeStage === 3 ? (state.clock.elapsedTime * 0.035 + index * 0.045) % 0.94 : 0
-    const markerProgress = activeStage === 3 ? 0.04 + loopOffset : Math.max(0.01, progress.current - 0.008)
-    marker.current.position.copy(geometry.curve.getPointAt(markerProgress))
-    const pulse = 1 + Math.sin(state.clock.elapsedTime * 5 + index) * 0.12
-    marker.current.scale.setScalar(pulse)
+  useFrame((_, delta) => {
+    progress.current = THREE.MathUtils.damp(
+      progress.current,
+      routeProgressAt(scrollProgress),
+      7,
+      delta,
+    )
+    const visibleSegments = Math.floor(progress.current * 128)
+    geometry.setDrawRange(0, Math.min(maxDrawCount, visibleSegments * 8 * 6))
   })
 
   return (
-    <group>
-      <RouteSegments segments={geometry.segments} color={route.color} radius={0.15} />
-      <mesh ref={marker} castShadow>
-        <sphereGeometry args={[0.23, 18, 18]} />
-        <meshStandardMaterial color={route.color} emissive={route.color} emissiveIntensity={0.35} />
-      </mesh>
-    </group>
+    <mesh geometry={geometry} frustumCulled={false}>
+      <meshStandardMaterial color={route.color} roughness={0.48} />
+    </mesh>
   )
 }
 
@@ -477,7 +462,7 @@ function WorldDetails() {
   )
 }
 
-export function RouteWorld({ activeStage }) {
+export function RouteWorld({ activeStage, scrollProgress }) {
   return (
     <>
       <color attach="background" args={['#e8eadc']} />
@@ -495,7 +480,7 @@ export function RouteWorld({ activeStage }) {
         shadow-camera-bottom={-13}
         shadow-bias={-0.0004}
       />
-      <CameraRig activeStage={activeStage} />
+      <CameraRig scrollProgress={scrollProgress} />
 
       <group position={[0, -0.18, 0]}>
         <RoundedBox args={[25, 0.42, 13]} radius={0.45} smoothness={5} position={[0, 0, 0]} receiveShadow>
@@ -504,12 +489,11 @@ export function RouteWorld({ activeStage }) {
         <RoundedBox args={[24.3, 0.08, 12.3]} radius={0.35} smoothness={4} position={[0, 0.24, 0]} receiveShadow>
           <meshStandardMaterial color="#b9c1b2" roughness={0.92} />
         </RoundedBox>
-        {routes.map((route, index) => (
+        {routes.map((route) => (
           <RouteLine
             key={route.color}
             route={route}
-            index={index}
-            activeStage={activeStage}
+            scrollProgress={scrollProgress}
           />
         ))}
         <Warehouse />
