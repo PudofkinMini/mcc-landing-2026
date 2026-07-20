@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/pudofkinmini/mcc-landing-2026/issues"
   },
-  "homepage": "https://github.com/pudofkinmini/mcc-landing-2026#readme",
+  "homepage": "https://pudofkinmini.github.io/mcc-landing-2026/",
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",

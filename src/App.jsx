@@ -99,6 +99,9 @@ const processSteps = [
   ['Keep evolving', 'A modular foundation lets you add capability, refine workflows, and respond as your operation changes.'],
 ]
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
+const sitePath = (path = '/') => `${basePath}${path}`
+
 const clampProgress = (progress) => Math.max(0, Math.min(1, progress))
 
 function LogoMark() {
@@ -125,13 +128,13 @@ function ArrowIcon() {
 function Header({ menuOpen, setMenuOpen, currentPath }) {
   return (
     <header className="header">
-      <a className="brand" href="/" aria-label="MobileCom home">
+      <a className="brand" href={sitePath()} aria-label="MobileCom home">
         <LogoMark />
         <span>MobileCom</span>
       </a>
       <span className="brand-descriptor">Route accounting for textile rental</span>
       <div className="header-actions">
-        <a className="text-link" href="/contact">
+        <a className="text-link" href={sitePath('/contact')}>
           Start a conversation
         </a>
         <button
@@ -161,7 +164,7 @@ function Header({ menuOpen, setMenuOpen, currentPath }) {
           ['/contact', 'Contact'],
         ].map(([href, label], index) => (
           <a
-            href={href}
+            href={sitePath(href)}
             key={href}
             className={currentPath === href ? 'is-current' : ''}
             onClick={() => setMenuOpen(false)}
@@ -407,7 +410,7 @@ function HomePage() {
           text="A modular route accounting system for the full textile rental service cycle—from customer setup and plant preparation to delivery, reconciliation, and decision support."
         />
         <ModuleGrid limit={4} />
-        <a className="button-link" href="/platform">
+        <a className="button-link" href={sitePath('/platform')}>
           Explore the platform <ArrowIcon />
         </a>
       </section>
@@ -452,7 +455,7 @@ function HomePage() {
           text="We focus on textile rental, then configure for the markets, customer commitments, and operating realities inside your business."
         />
         <IndustriesGrid />
-        <a className="button-link" href="/industries">
+        <a className="button-link" href={sitePath('/industries')}>
           See industry solutions <ArrowIcon />
         </a>
       </section>
@@ -725,7 +728,7 @@ function CtaBand() {
     <section className="cta-band">
       <p className="eyebrow">Built for where you are going</p>
       <h2>What should your route system make possible?</h2>
-      <a href="/contact">
+      <a href={sitePath('/contact')}>
         Let’s talk <ArrowIcon />
       </a>
     </section>
@@ -736,7 +739,7 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="footer-top">
-        <a className="brand footer-brand" href="/" aria-label="MobileCom home">
+        <a className="brand footer-brand" href={sitePath()} aria-label="MobileCom home">
           <LogoMark />
           <span>MobileCom</span>
         </a>
@@ -748,10 +751,10 @@ function Footer() {
       </div>
       <div className="footer-links">
         <nav aria-label="Footer navigation">
-          <a href="/platform">Platform</a>
-          <a href="/industries">Industries</a>
-          <a href="/company">Company</a>
-          <a href="/contact">Contact</a>
+          <a href={sitePath('/platform')}>Platform</a>
+          <a href={sitePath('/industries')}>Industries</a>
+          <a href={sitePath('/company')}>Company</a>
+          <a href={sitePath('/contact')}>Contact</a>
         </nav>
         <address>PO Box 53018 RPO Erin Mills, Mississauga, ON L5M 5H7, Canada</address>
       </div>
@@ -768,7 +771,7 @@ function NotFoundPage() {
     <section className="not-found">
       <p className="eyebrow">404 / Route not found</p>
       <h1>This stop isn’t on the manifest.</h1>
-      <a className="button-link" href="/">Return home <ArrowIcon /></a>
+      <a className="button-link" href={sitePath()}>Return home <ArrowIcon /></a>
     </section>
   )
 }
@@ -782,7 +785,11 @@ const pages = {
 }
 
 function App() {
-  const currentPath = window.location.pathname.replace(/\/+$/, '') || '/'
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
+  const currentPath =
+    basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+      ? pathname.slice(basePath.length) || '/'
+      : pathname
   const page = pages[currentPath]
   const Page = page?.component || NotFoundPage
   const [menuOpen, setMenuOpen] = useState(false)
