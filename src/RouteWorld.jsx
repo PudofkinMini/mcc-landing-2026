@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Billboard, Float, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
@@ -62,16 +62,16 @@ function CameraRig({ activeStage }) {
   const target = useRef(new THREE.Vector3(-7, 0, 0))
 
   const desktopViews = [
-    { position: [-10.4, 8.3, 11.2], target: [-7.2, 0.1, 0] },
-    { position: [-0.6, 10.5, 14.6], target: [0, 0.2, 0] },
-    { position: [10.2, 8.1, 11.6], target: [7.3, 0.1, 0] },
-    { position: [1.1, 14.2, 20.2], target: [0, 0.7, 0] },
+    { position: [-3.8, 13.2, 18.8], target: [-6.5, 0.1, 0] },
+    { position: [-12.2, 14.8, 18.2], target: [0, 0.3, 0] },
+    { position: [3.8, 13.2, 18.8], target: [6.5, 0.1, 0] },
+    { position: [-12.5, 18.8, 24.5], target: [0, 0.8, 0] },
   ]
   const mobileViews = [
-    { position: [-10.8, 10.5, 15.8], target: [-7.1, 0, 0] },
-    { position: [-0.4, 14.5, 20], target: [0, 0.1, 0] },
-    { position: [10.7, 10.5, 15.8], target: [7.2, 0, 0] },
-    { position: [1, 18.5, 25], target: [0, 0.5, 0] },
+    { position: [-7.8, 16.5, 23.8], target: [-6.4, 0, 0] },
+    { position: [-0.2, 20, 28], target: [0, 0.2, 0] },
+    { position: [7.8, 16.5, 23.8], target: [6.4, 0, 0] },
+    { position: [0.5, 23, 33], target: [0, 0.6, 0] },
   ]
 
   useFrame((_, delta) => {
@@ -93,27 +93,53 @@ function CameraRig({ activeStage }) {
   return null
 }
 
+function RouteSegments({ segments, color, radius, opacity = 1 }) {
+  const mesh = useRef()
+
+  useLayoutEffect(() => {
+    const up = new THREE.Vector3(0, 1, 0)
+    const matrix = new THREE.Matrix4()
+    const quaternion = new THREE.Quaternion()
+
+    segments.forEach(({ start, end }, index) => {
+      const direction = end.clone().sub(start)
+      const midpoint = start.clone().add(end).multiplyScalar(0.5)
+      quaternion.setFromUnitVectors(up, direction.clone().normalize())
+      matrix.compose(midpoint, quaternion, new THREE.Vector3(radius, direction.length(), radius))
+      mesh.current.setMatrixAt(index, matrix)
+    })
+    mesh.current.instanceMatrix.needsUpdate = true
+    mesh.current.computeBoundingSphere()
+  }, [radius, segments])
+
+  return (
+    <instancedMesh ref={mesh} args={[null, null, segments.length]} frustumCulled={false}>
+      <cylinderGeometry args={[1, 1, 1, 10]} />
+      <meshStandardMaterial color={color} roughness={0.48} transparent opacity={opacity} />
+    </instancedMesh>
+  )
+}
+
 function RouteLine({ route, index, activeStage }) {
   const geometry = useMemo(() => {
-    const points = route.points.map(([x, z]) => new THREE.Vector3(x, 0.14, z))
+    // Keep the routes just above the beveled site slab and below each building bridge.
+    const points = route.points.map(([x, z]) => new THREE.Vector3(x, 0.9, z))
     const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.32)
+    const samples = curve.getPoints(64)
     return {
       curve,
-      base: new THREE.TubeGeometry(curve, 220, 0.055, 8, false),
-      active: new THREE.TubeGeometry(curve, 220, 0.092, 10, false),
+      segments: samples.slice(0, -1).map((start, pointIndex) => ({
+        start,
+        end: samples[pointIndex + 1],
+      })),
     }
   }, [route.points])
-  const activeGeometry = useRef()
   const marker = useRef()
   const progress = useRef(0.015)
   const targetProgress = [0.29, 0.69, 0.985, 1][activeStage]
 
   useFrame((state, delta) => {
     progress.current = THREE.MathUtils.damp(progress.current, targetProgress, 2.3, delta)
-    const indexCount = geometry.active.index.count
-    const visibleCount = Math.floor((indexCount * progress.current) / 6) * 6
-    activeGeometry.current.setDrawRange(0, visibleCount)
-
     const loopOffset = activeStage === 3 ? (state.clock.elapsedTime * 0.035 + index * 0.045) % 0.94 : 0
     const markerProgress = activeStage === 3 ? 0.04 + loopOffset : Math.max(0.01, progress.current - 0.008)
     marker.current.position.copy(geometry.curve.getPointAt(markerProgress))
@@ -123,14 +149,9 @@ function RouteLine({ route, index, activeStage }) {
 
   return (
     <group>
-      <mesh geometry={geometry.base}>
-        <meshStandardMaterial color={palette.ink} roughness={0.7} transparent opacity={0.12} />
-      </mesh>
-      <mesh ref={activeGeometry} geometry={geometry.active}>
-        <meshStandardMaterial color={route.color} roughness={0.42} />
-      </mesh>
+      <RouteSegments segments={geometry.segments} color={route.color} radius={0.15} />
       <mesh ref={marker} castShadow>
-        <sphereGeometry args={[0.18, 18, 18]} />
+        <sphereGeometry args={[0.23, 18, 18]} />
         <meshStandardMaterial color={route.color} emissive={route.color} emissiveIntensity={0.35} />
       </mesh>
     </group>
@@ -460,13 +481,13 @@ export function RouteWorld({ activeStage }) {
   return (
     <>
       <color attach="background" args={['#e8eadc']} />
-      <fog attach="fog" args={['#e8eadc', 19, 35]} />
-      <ambientLight intensity={1.35} />
-      <hemisphereLight args={['#ffffff', '#9a9a82', 1.25]} />
+      <fog attach="fog" args={['#e8eadc', 28, 46]} />
+      <ambientLight intensity={0.85} />
+      <hemisphereLight args={['#ffffff', '#9a9a82', 0.9]} />
       <directionalLight
         castShadow
         position={[-6, 14, 9]}
-        intensity={2.2}
+        intensity={1.65}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-17}
         shadow-camera-right={17}
@@ -478,10 +499,10 @@ export function RouteWorld({ activeStage }) {
 
       <group position={[0, -0.18, 0]}>
         <RoundedBox args={[25, 0.42, 13]} radius={0.45} smoothness={5} position={[0, 0, 0]} receiveShadow>
-          <meshStandardMaterial color={palette.concrete} roughness={0.94} />
+          <meshStandardMaterial color="#c2c8ba" roughness={0.94} />
         </RoundedBox>
         <RoundedBox args={[24.3, 0.08, 12.3]} radius={0.35} smoothness={4} position={[0, 0.24, 0]} receiveShadow>
-          <meshStandardMaterial color="#c7cbbb" roughness={0.92} />
+          <meshStandardMaterial color="#b9c1b2" roughness={0.92} />
         </RoundedBox>
         {routes.map((route, index) => (
           <RouteLine

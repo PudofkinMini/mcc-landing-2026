@@ -60,7 +60,10 @@ function StageNav({ activeStage, setStage }) {
 }
 
 function App() {
-  const [activeStage, setActiveStage] = useState(0)
+  const requestedStage = Number.parseInt(new URLSearchParams(window.location.search).get('stage'), 10)
+  const [activeStage, setActiveStage] = useState(
+    Number.isInteger(requestedStage) ? Math.max(0, Math.min(stages.length - 1, requestedStage)) : 0,
+  )
   const [menuOpen, setMenuOpen] = useState(false)
   const wheelLock = useRef(false)
   const touchStart = useRef(null)
@@ -154,7 +157,7 @@ function App() {
         >
           <Suspense fallback={null}>
             <RouteWorld activeStage={activeStage} />
-            <Environment preset="city" environmentIntensity={0.35} />
+            <Environment preset="city" environmentIntensity={0.22} />
           </Suspense>
         </Canvas>
       </div>
