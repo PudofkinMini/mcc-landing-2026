@@ -46,6 +46,7 @@ button {
   overflow: hidden;
   background: var(--paper);
   isolation: isolate;
+  touch-action: none;
 }
 
 .site::before {
@@ -312,20 +313,6 @@ button {
   background: var(--ink);
   transform: scaleX(0);
   transform-origin: left;
-}
-
-.stage-button.is-active .stage-line-fill {
-  animation: stageFill 4.8s linear forwards;
-}
-
-@keyframes stageFill {
-  from {
-    transform: scaleX(0);
-  }
-
-  to {
-    transform: scaleX(1);
-  }
 }
 
 .scroll-hint {
