@@ -5,7 +5,7 @@ import * as THREE from 'three'
 
 const MOBILE_BREAKPOINT = 800
 const DESKTOP_VERTICAL_FOV = 35
-const MOBILE_HORIZONTAL_FOV = 52
+const MOBILE_HORIZONTAL_FOV = 54
 
 const palette = {
   ink: '#13282b',
@@ -73,9 +73,9 @@ function CameraRig({ scrollProgress }) {
     { position: [-12.5, 18.8, 24.5], target: [0, 0.8, 0] },
   ]
   const mobileViews = [
-    { position: [-5.2, 16.5, 25.8], target: [-1.5, 0, 0] },
+    { position: [-5.2, 16.5, 25.8], target: [0, 0, 0] },
     { position: [-0.2, 20, 28], target: [0, 0.2, 0] },
-    { position: [5.2, 16.5, 25.8], target: [1.5, 0, 0] },
+    { position: [5.2, 16.5, 25.8], target: [0, 0, 0] },
     { position: [0.5, 23, 33], target: [0, 0.6, 0] },
   ]
 
