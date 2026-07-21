@@ -32,7 +32,7 @@ const processCurve = new THREE.CatmullRomCurve3(
     new THREE.Vector3(-12.35, 1.08, 0),
     new THREE.Vector3(-9.7, 1.08, 0),
     new THREE.Vector3(-7.45, 1.08, 0),
-    new THREE.Vector3(-5.8, 1.08, 0),
+    new THREE.Vector3(-6.25, 1.08, 0),
   ],
   false,
   'centripetal',
@@ -66,9 +66,9 @@ const truckCurves = customerSites.map((site, index) => {
   const startZ = [1.45, 0, -1.45][index]
   return new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(-1.25, 0.58, startZ),
-      new THREE.Vector3(-0.5, 0.58, startZ),
-      new THREE.Vector3(0.7, 0.58, startZ + (site.lane - startZ) * 0.24),
+      new THREE.Vector3(-4.4, 0.58, startZ),
+      new THREE.Vector3(-2.8, 0.58, startZ),
+      new THREE.Vector3(-0.8, 0.58, startZ + (site.lane - startZ) * 0.24),
       new THREE.Vector3(2.3, 0.58, site.lane),
       new THREE.Vector3(site.stop[0] - 2.2, 0.58, site.lane),
       new THREE.Vector3(...site.stop),
@@ -289,9 +289,9 @@ function TransferLoads({ scrollProgress }) {
   const start = useMemo(() => new THREE.Vector3(-6.15, 1.28, 0), [])
   const destination = useMemo(
     () => [
-      new THREE.Vector3(-1.8, 1.52, 1.45),
-      new THREE.Vector3(-1.8, 1.52, 0),
-      new THREE.Vector3(-1.8, 1.52, -1.45),
+      new THREE.Vector3(-4.95, 1.52, 1.45),
+      new THREE.Vector3(-4.95, 1.52, 0),
+      new THREE.Vector3(-4.95, 1.52, -1.45),
     ],
     [],
   )
@@ -542,15 +542,15 @@ function Plant({ scrollProgress }) {
       {[-18.3, -14.7, -11.1, -7.5].map((x) => (
         <Window key={x} position={[x, 2.25, -4.95]} size={[1.72, 0.78]} color="#6f9196" />
       ))}
-      <Conveyor position={[-13, 1, 0]} length={14.8} speed={1.05} />
+      <Conveyor position={[-13.25, 1, 0]} length={14} speed={1.05} />
       {[
-        { z: 1.45, length: 2.95, rotation: -0.52, color: colors.coral },
-        { z: 0, length: 2.62, rotation: 0, color: colors.blue },
-        { z: -1.45, length: 2.95, rotation: 0.52, color: colors.green },
+        { z: 1.45, length: 1.48, rotation: -1.45, color: colors.coral },
+        { z: 0, length: 0.8, rotation: 0, color: colors.blue },
+        { z: -1.45, length: 1.48, rotation: 1.45, color: colors.green },
       ].map(({ z, length, rotation, color }) => (
         <Conveyor
           key={z}
-          position={[-4.28, 1.12, z / 2]}
+          position={[-6.15, 1.12, z / 2]}
           length={length}
           rotation={rotation}
           slope={0.14}
@@ -632,6 +632,20 @@ function TruckModel({ accent }) {
             <mesh position={[0, 0.09, 0]}>
               <cylinderGeometry args={[0.1, 0.1, 0.17, 12]} />
               <meshStandardMaterial color={colors.steel} metalness={0.65} />
+            </mesh>
+          </group>
+        )),
+      )}
+      {[-0.18, 1.13].flatMap((x) =>
+        [-0.835, 0.835].map((z) => (
+          <group key={`wheel-cap-${x}-${z}`} position={[x, 0.28, z]} rotation={[0, z < 0 ? Math.PI : 0, 0]}>
+            <mesh castShadow>
+              <circleGeometry args={[0.32, 24]} />
+              <meshStandardMaterial color="#172426" roughness={0.82} />
+            </mesh>
+            <mesh position={[0, 0, 0.012]}>
+              <circleGeometry args={[0.105, 18]} />
+              <meshStandardMaterial color={colors.steel} metalness={0.68} roughness={0.3} />
             </mesh>
           </group>
         )),
