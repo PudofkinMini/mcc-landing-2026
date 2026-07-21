@@ -626,7 +626,7 @@ function TruckModel({ accent }) {
         <boxGeometry args={[0.72, 0.18, 0.08]} />
         <meshStandardMaterial color={colors.darkInk} />
       </mesh>
-      {[-0.18, 1.13].flatMap((x) =>
+      {[-1, 0.95].flatMap((x) =>
         [-0.72, 0.72].map((z) => (
           <group key={`${x}-${z}`} position={[x, 0.28, z]} rotation={[Math.PI / 2, 0, 0]}>
             <mesh castShadow>
@@ -640,20 +640,18 @@ function TruckModel({ accent }) {
           </group>
         )),
       )}
-      {[-0.18, 1.13].flatMap((x) =>
-        [-0.9, 0.9].map((z) => (
-          <group key={`wheel-cap-${x}-${z}`} position={[x, 0.28, z]} rotation={[0, z < 0 ? Math.PI : 0, 0]}>
-            <mesh castShadow>
-              <torusGeometry args={[0.22, 0.1, 12, 24]} />
-              <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
-            </mesh>
-            <mesh position={[0, 0, 0.012]}>
-              <circleGeometry args={[0.12, 18]} />
-              <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} side={THREE.DoubleSide} />
-            </mesh>
-          </group>
-        )),
-      )}
+      {[-1, 0.95].map((x) => (
+        <group key={`wheel-cap-${x}`} position={[x, 0.28, 0.94]}>
+          <mesh castShadow>
+            <torusGeometry args={[0.22, 0.1, 12, 24]} />
+            <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.012]}>
+            <circleGeometry args={[0.12, 18]} />
+            <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      ))}
       {[-0.34, 0.34].map((z) => (
         <mesh key={z} position={[1.515, 0.72, z]} rotation={[0, Math.PI / 2, 0]}>
           <circleGeometry args={[0.09, 16]} />
