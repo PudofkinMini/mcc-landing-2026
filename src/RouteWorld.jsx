@@ -12,8 +12,8 @@ const palette = {
   coral: '#f2563d',
   blue: '#3d88b8',
   gold: '#e9aa3c',
-  routeOut: '#3eb878',
-  routeBack: '#ed5949',
+  routeOut: '#118e57',
+  routeBack: '#d84435',
   cream: '#f4f0e4',
   concrete: '#d8d9cc',
   window: '#24444a',
@@ -168,8 +168,8 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
     const outboundCurve = routeCurves[routeIndex].outbound
     const returnCurve = routeCurves[routeIndex].returning
     const buildPair = (curve, segments) => {
-      const line = new THREE.TubeGeometry(curve, segments, 0.07, 8, false)
-      const glow = new THREE.TubeGeometry(curve, segments, 0.14, 8, false)
+      const line = new THREE.TubeGeometry(curve, segments, 0.078, 8, false)
+      const glow = new THREE.TubeGeometry(curve, segments, 0.135, 8, false)
       line.setDrawRange(0, 0)
       glow.setDrawRange(0, 0)
       return { curve, line, glow }
@@ -224,7 +224,7 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         <meshBasicMaterial
           color={palette.routeOut}
           transparent
-          opacity={0.14}
+          opacity={0.045}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -233,7 +233,7 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         <meshStandardMaterial
           color={palette.routeOut}
           emissive={palette.routeOut}
-          emissiveIntensity={0.4}
+          emissiveIntensity={0.2}
           roughness={0.38}
         />
       </mesh>
@@ -241,7 +241,7 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         <meshBasicMaterial
           color={palette.routeBack}
           transparent
-          opacity={0.13}
+          opacity={0.045}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -250,7 +250,7 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         <meshStandardMaterial
           color={palette.routeBack}
           emissive={palette.routeBack}
-          emissiveIntensity={0.38}
+          emissiveIntensity={0.2}
           roughness={0.4}
         />
       </mesh>
