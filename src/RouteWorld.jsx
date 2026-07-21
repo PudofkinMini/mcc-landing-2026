@@ -12,8 +12,10 @@ const palette = {
   coral: '#f2563d',
   blue: '#3d88b8',
   gold: '#e9aa3c',
-  routeOut: '#118e57',
-  routeBack: '#d84435',
+  routeOut: '#00643c',
+  routeOutGlow: '#47d990',
+  routeBack: '#b93229',
+  routeBackGlow: '#ff7463',
   cream: '#f4f0e4',
   concrete: '#d8d9cc',
   window: '#24444a',
@@ -168,8 +170,8 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
     const outboundCurve = routeCurves[routeIndex].outbound
     const returnCurve = routeCurves[routeIndex].returning
     const buildPair = (curve, segments) => {
-      const line = new THREE.TubeGeometry(curve, segments, 0.078, 8, false)
-      const glow = new THREE.TubeGeometry(curve, segments, 0.135, 8, false)
+      const line = new THREE.TubeGeometry(curve, segments, 0.095, 8, false)
+      const glow = new THREE.TubeGeometry(curve, segments, 0.15, 8, false)
       line.setDrawRange(0, 0)
       glow.setDrawRange(0, 0)
       return { curve, line, glow }
@@ -222,7 +224,7 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
     <>
       <mesh geometry={geometry.outbound.glow} frustumCulled={false}>
         <meshBasicMaterial
-          color={palette.routeOut}
+          color={palette.routeOutGlow}
           transparent
           opacity={0.045}
           depthWrite={false}
@@ -237,7 +239,7 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
       </mesh>
       <mesh geometry={geometry.returning.glow} frustumCulled={false}>
         <meshBasicMaterial
-          color={palette.routeBack}
+          color={palette.routeBackGlow}
           transparent
           opacity={0.045}
           depthWrite={false}
