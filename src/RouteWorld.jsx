@@ -128,6 +128,7 @@ function CameraRig({ scrollProgress }) {
       : new THREE.Vector3(-8, 30, 38)
     desiredPosition.copy(desiredTarget).add(closeOffset.lerp(wideOffset, reveal))
     const loadingAngle = smooth(scrollProgress, 0.24, 0.42) * (1 - reveal)
+    desiredPosition.x -= loadingAngle * (mobile ? 1.1 : 1.8)
     desiredPosition.y -= loadingAngle * (mobile ? 1.7 : 3)
     desiredPosition.z += loadingAngle * (mobile ? 0.9 : 1.6)
     desiredPosition.x += pointer.x * 0.35
