@@ -623,18 +623,23 @@ function TruckModel({ accent }) {
         <meshStandardMaterial color={colors.darkInk} />
       </mesh>
       {[-1.02, 0.92].flatMap((x) =>
-        [-0.63, 0.63].map((z) => (
-          <group key={`${x}-${z}`} position={[x, 0.39, z]}>
+        [-0.71, 0.71].map((z) => (
+          <group key={`${x}-${z}`} position={[x, 0.43, z]}>
             <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[0.34, 0.34, 0.28, 24]} />
+              <cylinderGeometry args={[0.36, 0.36, 0.3, 24]} />
               <meshStandardMaterial color="#172426" roughness={0.84} />
             </mesh>
-            {[-0.16, 0.16].map((side) => (
-              <mesh key={side} position={[0, 0, side]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.12, 0.12, 0.045, 18]} />
-                <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} />
-              </mesh>
-            ))}
+            <mesh position={[0, 0, Math.sign(z) * 0.165]}>
+              <torusGeometry args={[0.27, 0.085, 10, 24]} />
+              <meshStandardMaterial color="#202e30" roughness={0.88} />
+            </mesh>
+            <mesh
+              position={[0, 0, Math.sign(z) * 0.18]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <cylinderGeometry args={[0.12, 0.12, 0.055, 18]} />
+              <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} />
+            </mesh>
           </group>
         )),
       )}
