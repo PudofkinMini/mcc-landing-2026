@@ -641,9 +641,9 @@ function TruckModel({ accent }) {
         )),
       )}
       {[-1, 0.5].map((x) => (
-        <group key={`wheel-cap-${x}`} position={[x, 0.38, 1.8]}>
+        <group key={`wheel-cap-${x}`} position={[x, 0.54, 0.95]}>
           <mesh castShadow>
-            <circleGeometry args={[0.31, 24]} />
+            <circleGeometry args={[0.28, 24]} />
             <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
           </mesh>
           <mesh position={[0, 0, 0.012]}>
