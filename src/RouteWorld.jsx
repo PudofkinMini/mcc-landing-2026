@@ -157,10 +157,15 @@ function CameraRig({ scrollProgress }) {
     focus.current.lerp(desiredFocus, 1 - Math.exp(-delta * 3.6))
     const mobile = size.width <= MOBILE_BREAKPOINT
     const orbit = Math.sin(scrollProgress * Math.PI * 1.25)
+    const finishLift = THREE.MathUtils.smoothstep(scrollProgress, 0.84, 1)
+    const cameraAnchorX = THREE.MathUtils.lerp(focus.current.x, 0, finishLift)
+    const cameraAnchorZ = THREE.MathUtils.lerp(focus.current.z, 0, finishLift)
     const desiredPosition = new THREE.Vector3(
-      focus.current.x + (mobile ? 1.5 : 3.5) + orbit * 2.4,
-      mobile ? 30 : 25 + Math.sin(scrollProgress * Math.PI) * 2.5,
-      focus.current.z + (mobile ? 33 : 29) - orbit * 2.2,
+      cameraAnchorX + (mobile ? 1.5 : 3.5) + orbit * 2.4,
+      (mobile ? 30 : 25) +
+        Math.sin(scrollProgress * Math.PI) * 2.5 +
+        finishLift * (mobile ? 5 : 8),
+      cameraAnchorZ + (mobile ? 33 : 29) - orbit * 2.2 + finishLift * (mobile ? 6 : 9),
     )
     desiredPosition.x += pointer.x * 0.42
     desiredPosition.y += pointer.y * 0.2
@@ -169,9 +174,9 @@ function CameraRig({ scrollProgress }) {
     camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosition.z, 3.2, delta)
 
     const desiredTarget = new THREE.Vector3(
-      focus.current.x - (mobile ? 0 : 2.8),
+      THREE.MathUtils.lerp(focus.current.x - (mobile ? 0 : 2.8), mobile ? 0 : -1, finishLift),
       0.65,
-      focus.current.z,
+      THREE.MathUtils.lerp(focus.current.z, 0, finishLift),
     )
     target.current.x = THREE.MathUtils.damp(target.current.x, desiredTarget.x, 3.2, delta)
     target.current.y = THREE.MathUtils.damp(target.current.y, desiredTarget.y, 3.2, delta)
