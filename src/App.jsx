@@ -2,6 +2,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Loader } from '@react-three/drei'
 import { RouteWorld } from './RouteWorld'
+import { HERO_STAGE_STARTS } from './heroTimeline'
 
 const stages = [
   {
@@ -184,15 +185,15 @@ function Header({ menuOpen, setMenuOpen, currentPath }) {
 }
 
 function StageNav({ activeStage, scrollProgress, setStage }) {
-  const chapterProgress = scrollProgress * (stages.length - 1)
-
   return (
     <nav className="stage-nav" aria-label="Route story chapters">
       {stages.map((stage, index) => {
+        const start = HERO_STAGE_STARTS[index]
+        const end = HERO_STAGE_STARTS[index + 1]
         const lineProgress =
           index === stages.length - 1
-            ? Number(chapterProgress >= index)
-            : clampProgress(chapterProgress - index)
+            ? Number(scrollProgress >= start)
+            : clampProgress((scrollProgress - start) / (end - start))
 
         return (
           <button
@@ -218,9 +219,10 @@ function StageNav({ activeStage, scrollProgress, setStage }) {
 function HomeHero() {
   const trackRef = useRef(null)
   const [scrollProgress, setScrollProgress] = useState(0)
-  const activeStage = Math.min(
-    stages.length - 1,
-    Math.floor(scrollProgress * (stages.length - 1) + 0.5),
+  const activeStage = HERO_STAGE_STARTS.reduce(
+    (currentStage, start, index) =>
+      scrollProgress >= start ? index : currentStage,
+    0,
   )
 
   useEffect(() => {
@@ -252,7 +254,7 @@ function HomeHero() {
     const trackTop = window.scrollY + rect.top
     const distance = rect.height - window.innerHeight
     window.scrollTo({
-      top: trackTop + (index / (stages.length - 1)) * distance,
+      top: trackTop + HERO_STAGE_STARTS[index] * distance,
       behavior: 'smooth',
     })
   }

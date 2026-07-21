@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Billboard, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
+import { LINEN_TIMELINE, TRUCK_TIMELINE } from './heroTimeline'
 
 const MOBILE_BREAKPOINT = 800
 const DESKTOP_FOV = 34
@@ -24,6 +25,29 @@ const colors = {
 
 const smooth = (value, start, end) => THREE.MathUtils.smoothstep(value, start, end)
 
+const middleLinenProgress = (scrollProgress) =>
+  LINEN_TIMELINE.initialMiddleProgress +
+  scrollProgress / LINEN_TIMELINE.end
+
+const linenProgress = (scrollProgress, index) =>
+  THREE.MathUtils.clamp(
+    middleLinenProgress(scrollProgress) + (1 - index) * LINEN_TIMELINE.spacing,
+    0,
+    1,
+  )
+
+const truckProgress = (scrollProgress, index) => {
+  const loadingSequence = 2 - index
+  const departure =
+    TRUCK_TIMELINE.middleDeparture +
+    (loadingSequence - 1) * TRUCK_TIMELINE.departureSpacing
+  return smooth(
+    scrollProgress,
+    departure,
+    TRUCK_TIMELINE.driveEnd + (loadingSequence - 1) * 0.018,
+  )
+}
+
 const processCurve = new THREE.CatmullRomCurve3(
   [
     new THREE.Vector3(-24.15, 1.08, 0),
@@ -39,26 +63,29 @@ const processCurve = new THREE.CatmullRomCurve3(
 )
 
 const loadingLanes = [2.4, 0, -2.4]
+// From this camera angle, negative Z is the top loading bay on screen.
+const linenTruckOrder = [2, 1, 0]
+const truckHeight = 0.44
 
 const customerSites = [
   {
     id: 'restaurant',
     position: [11.5, 0.3, 7.9],
-    stop: [8.4, 0.26, 7.9],
+    stop: [8.4, truckHeight, 7.9],
     lane: 7.9,
     color: colors.coral,
   },
   {
     id: 'hotel',
     position: [12.7, 0.3, 0],
-    stop: [9.4, 0.26, 0],
+    stop: [9.4, truckHeight, 0],
     lane: 0,
     color: colors.blue,
   },
   {
     id: 'hospital',
     position: [12.5, 0.3, -8.1],
-    stop: [8.7, 0.26, -8.1],
+    stop: [8.7, truckHeight, -8.1],
     lane: -8.1,
     color: colors.green,
   },
@@ -68,11 +95,11 @@ const truckCurves = customerSites.map((site, index) => {
   const startZ = loadingLanes[index]
   return new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(-4.35, 0.26, startZ),
-      new THREE.Vector3(-2.8, 0.26, startZ),
-      new THREE.Vector3(-0.8, 0.26, startZ + (site.lane - startZ) * 0.24),
-      new THREE.Vector3(2.3, 0.26, site.lane),
-      new THREE.Vector3(site.stop[0] - 2.2, 0.26, site.lane),
+      new THREE.Vector3(-4.35, truckHeight, startZ),
+      new THREE.Vector3(-2.8, truckHeight, startZ),
+      new THREE.Vector3(-0.8, truckHeight, startZ + (site.lane - startZ) * 0.24),
+      new THREE.Vector3(2.3, truckHeight, site.lane),
+      new THREE.Vector3(site.stop[0] - 2.2, truckHeight, site.lane),
       new THREE.Vector3(...site.stop),
     ],
     false,
@@ -103,12 +130,19 @@ function CameraRig({ scrollProgress }) {
 
   useFrame((_, delta) => {
     const mobile = size.width <= MOBILE_BREAKPOINT
-    const plantProgress = smooth(scrollProgress, 0, 0.36)
-    processCurve.getPointAt(Math.min(plantProgress, 0.94), processPoint)
+    const trackedLinenProgress = Math.min(
+      middleLinenProgress(scrollProgress),
+      LINEN_TIMELINE.processEnd,
+    )
+    processCurve.getPointAt(
+      trackedLinenProgress / LINEN_TIMELINE.processEnd,
+      processPoint,
+    )
 
-    const driveProgress = smooth(scrollProgress, 0.34, 0.9)
     truckFocus.set(0, 0, 0)
-    truckCurves.forEach((curve) => truckFocus.add(curve.getPointAt(driveProgress)))
+    truckCurves.forEach((curve, index) =>
+      truckFocus.add(curve.getPointAt(truckProgress(scrollProgress, index))),
+    )
     truckFocus.divideScalar(truckCurves.length)
 
     const followBlend = smooth(scrollProgress, 0.29, 0.43)
@@ -168,31 +202,8 @@ function Conveyor({
   rotation = 0,
   slope = 0,
   width = 1.02,
-  railColor = colors.gold,
-  speed = 0.9,
 }) {
-  const rollersRef = useRef([])
-  const markersRef = useRef([])
   const rollers = Array.from({ length: Math.ceil(length / 0.48) }, (_, index) => -length / 2 + 0.24 + index * 0.48)
-  const markerTravel = length - 0.48
-  const markerCount = Math.max(2, Math.ceil(length / 1.35))
-  const markers = Array.from(
-    { length: markerCount },
-    (_, index) => -markerTravel / 2 + (index * markerTravel) / markerCount,
-  )
-
-  useFrame(({ clock }) => {
-    const travel = clock.elapsedTime * speed
-    rollersRef.current.forEach((roller) => {
-      if (roller) roller.rotation.y = -travel * 3.8
-    })
-    markersRef.current.forEach((marker, index) => {
-      if (!marker) return
-      marker.position.x =
-        -markerTravel / 2 +
-        (((index * markerTravel) / markerCount + travel) % markerTravel)
-    })
-  })
 
   return (
     <group position={position} rotation={[0, rotation, slope]}>
@@ -204,25 +215,9 @@ function Conveyor({
         <boxGeometry args={[length - 0.08, 0.06, width - 0.18]} />
         <meshStandardMaterial color={colors.blue} roughness={0.42} metalness={0.22} />
       </mesh>
-      {markers.map((x, index) => (
-        <mesh
-          key={`marker-${x}`}
-          ref={(marker) => {
-            markersRef.current[index] = marker
-          }}
-          position={[x, 0.145, 0]}
-        >
-          <boxGeometry args={[0.08, 0.025, width - 0.22]} />
-          <meshStandardMaterial color={index % 3 === 0 ? colors.coral : colors.paleBlue} roughness={0.45} />
-        </mesh>
-      ))}
-      {rollers.map((x, index) => (
+      {rollers.map((x) => (
         <group key={x} position={[x, 0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <mesh
-            ref={(roller) => {
-              rollersRef.current[index] = roller
-            }}
-          >
+          <mesh>
             <cylinderGeometry args={[0.06, 0.06, width - 0.14, 10]} />
             <meshStandardMaterial color="#b9c1bb" metalness={0.65} roughness={0.28} />
           </mesh>
@@ -231,7 +226,7 @@ function Conveyor({
       {[-width / 2 - 0.05, width / 2 + 0.05].map((z) => (
         <mesh key={z} position={[0, 0.16, z]}>
           <boxGeometry args={[length, 0.1, 0.08]} />
-          <meshStandardMaterial color={railColor} metalness={0.25} roughness={0.46} />
+          <meshStandardMaterial color={colors.steel} metalness={0.25} roughness={0.46} />
         </mesh>
       ))}
       {[-length * 0.38, length * 0.38].flatMap((x) =>
@@ -269,59 +264,76 @@ function LinenStack({ color = colors.paleBlue }) {
   )
 }
 
-function ProcessLoad({ scrollProgress }) {
-  const load = useRef()
-  const point = useMemo(() => new THREE.Vector3(), [])
-  const start = 0.015
-  const end = 0.34
-
-  useFrame(() => {
-    const progress = smooth(scrollProgress, start, end)
-    processCurve.getPointAt(progress, point)
-    load.current.position.copy(point)
-    load.current.position.y += 0.25
-    load.current.visible = scrollProgress < 0.375
-  })
-
-  return (
-    <group ref={load}>
-      <LinenStack />
-    </group>
-  )
-}
-
-function TransferLoads({ scrollProgress }) {
+function LinenLoads({ scrollProgress }) {
   const loads = useRef([])
-  const start = useMemo(() => new THREE.Vector3(-6.2, 1.28, 0), [])
+  const processPoint = useMemo(() => new THREE.Vector3(), [])
+  const transferStart = useMemo(
+    () => new THREE.Vector3(-6.2, 1.33, 0),
+    [],
+  )
   const destination = useMemo(
-    () => loadingLanes.map((z) => new THREE.Vector3(-4.55, 1.52, z)),
+    () =>
+      linenTruckOrder.map(
+        (truckIndex) =>
+          new THREE.Vector3(-4.55, 1.52, loadingLanes[truckIndex]),
+      ),
     [],
   )
 
   useFrame(() => {
-    const progress = smooth(scrollProgress, 0.265, 0.365)
     loads.current.forEach((load, index) => {
       if (!load) return
-      load.position.lerpVectors(start, destination[index], progress)
-      load.position.y += Math.sin(progress * Math.PI) * 0.12
-      load.visible = scrollProgress >= 0.245 && scrollProgress < 0.375
-      load.scale.setScalar(THREE.MathUtils.lerp(0.86, 0.52, progress))
+      const progress = linenProgress(scrollProgress, index)
+
+      if (progress <= LINEN_TIMELINE.processEnd) {
+        processCurve.getPointAt(
+          progress / LINEN_TIMELINE.processEnd,
+          processPoint,
+        )
+        load.position.copy(processPoint)
+        load.position.y += 0.25
+        load.scale.setScalar(1)
+      } else {
+        const transferProgress = smooth(
+          progress,
+          LINEN_TIMELINE.processEnd,
+          1,
+        )
+        load.position.lerpVectors(
+          transferStart,
+          destination[index],
+          transferProgress,
+        )
+        load.position.y += Math.sin(transferProgress * Math.PI) * 0.12
+        load.scale.setScalar(THREE.MathUtils.lerp(1, 0.54, transferProgress))
+      }
+
+      load.visible = progress < 1
     })
   })
 
   return (
     <>
-      {customerSites.map((site, index) => (
-        <group
-          key={site.id}
-          ref={(load) => {
-            loads.current[index] = load
-          }}
-          visible={false}
-        >
-          <LinenStack color={index === 0 ? '#f2c2aa' : index === 1 ? colors.paleBlue : '#b7d5c3'} />
-        </group>
-      ))}
+      {linenTruckOrder.map((truckIndex, index) => {
+        const site = customerSites[truckIndex]
+        const linenColor =
+          site.id === 'restaurant'
+            ? '#f2c2aa'
+            : site.id === 'hospital'
+              ? '#b7d5c3'
+              : colors.paleBlue
+
+        return (
+          <group
+            key={site.id}
+            ref={(load) => {
+              loads.current[index] = load
+            }}
+          >
+            <LinenStack color={linenColor} />
+          </group>
+        )
+      })}
     </>
   )
 }
@@ -544,7 +556,7 @@ function Plant({ scrollProgress }) {
       {[-22.8, -18.3, -13.8, -9.3].map((x) => (
         <Window key={x} position={[x, 2.65, -6.45]} size={[2.05, 0.92]} color="#6f9196" />
       ))}
-      <Conveyor position={[-15.25, 1, 0]} length={18.1} speed={1.05} />
+      <Conveyor position={[-15.25, 1, 0]} length={18.1} />
       {loadingLanes.map((z) => {
         const deltaX = 1.85
         const length = Math.hypot(deltaX, z)
@@ -555,7 +567,6 @@ function Plant({ scrollProgress }) {
             length={length}
             rotation={-Math.atan2(z, deltaX)}
             slope={0.08}
-            speed={1.12}
           />
         )
       })}
@@ -578,8 +589,7 @@ function Plant({ scrollProgress }) {
           )}
         </group>
       ))}
-      <ProcessLoad scrollProgress={scrollProgress} />
-      <TransferLoads scrollProgress={scrollProgress} />
+      <LinenLoads scrollProgress={scrollProgress} />
     </group>
   )
 }
@@ -661,8 +671,7 @@ function MovingTruck({ index, scrollProgress }) {
   const site = customerSites[index]
 
   useFrame(() => {
-    const delay = index * 0.018
-    const progress = smooth(scrollProgress, 0.32 + delay, 0.88 + delay)
+    const progress = truckProgress(scrollProgress, index)
     curve.getPointAt(progress, point)
     curve.getTangentAt(Math.min(progress, 0.995), tangent)
     truck.current.position.copy(point)
