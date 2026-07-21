@@ -12,8 +12,8 @@ const palette = {
   coral: '#f2563d',
   blue: '#3d88b8',
   gold: '#e9aa3c',
-  routeOut: '#008e57',
-  routeOutGlow: '#62eca4',
+  routeOut: '#008a50',
+  routeOutGlow: '#28d486',
   routeBack: '#b93229',
   routeBackGlow: '#ff7463',
   cream: '#f4f0e4',
@@ -245,9 +245,8 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         <meshBasicMaterial
           color={palette.routeOutGlow}
           transparent
-          opacity={0.045}
+          opacity={0.12}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
         />
       </mesh>
       <mesh geometry={geometry.outbound.line} frustumCulled={false}>
