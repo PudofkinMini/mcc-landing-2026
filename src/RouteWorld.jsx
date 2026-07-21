@@ -26,51 +26,53 @@ const smooth = (value, start, end) => THREE.MathUtils.smoothstep(value, start, e
 
 const processCurve = new THREE.CatmullRomCurve3(
   [
-    new THREE.Vector3(-19.4, 1.08, 0),
-    new THREE.Vector3(-16.7, 1.08, 0),
-    new THREE.Vector3(-14.7, 1.08, 0),
-    new THREE.Vector3(-12.35, 1.08, 0),
-    new THREE.Vector3(-9.7, 1.08, 0),
-    new THREE.Vector3(-7.45, 1.08, 0),
-    new THREE.Vector3(-6.25, 1.08, 0),
+    new THREE.Vector3(-24.15, 1.08, 0),
+    new THREE.Vector3(-21.7, 1.08, 0),
+    new THREE.Vector3(-18.55, 1.08, 0),
+    new THREE.Vector3(-15.55, 1.08, 0),
+    new THREE.Vector3(-12.2, 1.08, 0),
+    new THREE.Vector3(-8.55, 1.08, 0),
+    new THREE.Vector3(-6.2, 1.08, 0),
   ],
   false,
   'centripetal',
 )
 
+const loadingLanes = [2.4, 0, -2.4]
+
 const customerSites = [
   {
     id: 'restaurant',
     position: [11.5, 0.3, 7.9],
-    stop: [8.4, 0.58, 7.9],
+    stop: [8.4, 0.26, 7.9],
     lane: 7.9,
     color: colors.coral,
   },
   {
     id: 'hotel',
     position: [12.7, 0.3, 0],
-    stop: [9.4, 0.58, 0],
+    stop: [9.4, 0.26, 0],
     lane: 0,
     color: colors.blue,
   },
   {
     id: 'hospital',
     position: [12.5, 0.3, -8.1],
-    stop: [8.7, 0.58, -8.1],
+    stop: [8.7, 0.26, -8.1],
     lane: -8.1,
     color: colors.green,
   },
 ]
 
 const truckCurves = customerSites.map((site, index) => {
-  const startZ = [1.45, 0, -1.45][index]
+  const startZ = loadingLanes[index]
   return new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(-4.4, 0.58, startZ),
-      new THREE.Vector3(-2.8, 0.58, startZ),
-      new THREE.Vector3(-0.8, 0.58, startZ + (site.lane - startZ) * 0.24),
-      new THREE.Vector3(2.3, 0.58, site.lane),
-      new THREE.Vector3(site.stop[0] - 2.2, 0.58, site.lane),
+      new THREE.Vector3(-4.35, 0.26, startZ),
+      new THREE.Vector3(-2.8, 0.26, startZ),
+      new THREE.Vector3(-0.8, 0.26, startZ + (site.lane - startZ) * 0.24),
+      new THREE.Vector3(2.3, 0.26, site.lane),
+      new THREE.Vector3(site.stop[0] - 2.2, 0.26, site.lane),
       new THREE.Vector3(...site.stop),
     ],
     false,
@@ -80,7 +82,7 @@ const truckCurves = customerSites.map((site, index) => {
 
 function CameraRig({ scrollProgress }) {
   const { camera, pointer, size } = useThree()
-  const target = useRef(new THREE.Vector3(-16.4, 0.9, 0))
+  const target = useRef(new THREE.Vector3(-21.4, 0.9, 0))
   const processPoint = useMemo(() => new THREE.Vector3(), [])
   const truckFocus = useMemo(() => new THREE.Vector3(), [])
   const desiredTarget = useMemo(() => new THREE.Vector3(), [])
@@ -290,13 +292,9 @@ function ProcessLoad({ scrollProgress }) {
 
 function TransferLoads({ scrollProgress }) {
   const loads = useRef([])
-  const start = useMemo(() => new THREE.Vector3(-6.15, 1.28, 0), [])
+  const start = useMemo(() => new THREE.Vector3(-6.2, 1.28, 0), [])
   const destination = useMemo(
-    () => [
-      new THREE.Vector3(-4.95, 1.52, 1.45),
-      new THREE.Vector3(-4.95, 1.52, 0),
-      new THREE.Vector3(-4.95, 1.52, -1.45),
-    ],
+    () => loadingLanes.map((z) => new THREE.Vector3(-4.55, 1.52, z)),
     [],
   )
 
@@ -336,7 +334,7 @@ function TunnelWasher() {
   })
 
   return (
-    <group position={[-15.75, 2.05, 0]}>
+    <group position={[-20.7, 2.05, 0]}>
       <group rotation={[0, 0, Math.PI / 2]}>
         <mesh castShadow receiveShadow>
           <cylinderGeometry args={[1.72, 1.72, 3.8, 48, 1, true]} />
@@ -388,7 +386,7 @@ function TunnelWasher() {
 
 function IndustrialDryer() {
   return (
-    <group position={[-11.35, 0.3, 0]}>
+    <group position={[-14.75, 0.3, 0]}>
       <RoundedBox args={[2.9, 2.35, 3.1]} radius={0.22} smoothness={4} position={[0, 2.48, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#d9ddd5" roughness={0.6} metalness={0.16} />
       </RoundedBox>
@@ -436,7 +434,7 @@ function IndustrialDryer() {
 
 function LinenFolder() {
   return (
-    <group position={[-7.75, 0.3, 0]}>
+    <group position={[-8.65, 0.3, 0]}>
       {[-1.22, 1.22].map((z) => (
         <RoundedBox
           key={z}
@@ -493,31 +491,31 @@ function LinenFolder() {
 function PlantDoor() {
   return (
     <group position={[-3.15, 0.3, 0]}>
-      <mesh position={[0, 2.75, 0]} castShadow>
-        <boxGeometry args={[0.55, 1.1, 8.6]} />
+      <mesh position={[0, 3.32, 0]} castShadow>
+        <boxGeometry args={[0.55, 1.1, 11.35]} />
         <meshStandardMaterial color={colors.cream} roughness={0.8} />
       </mesh>
-      {[-4.05, 4.05].map((z) => (
-        <mesh key={z} position={[0, 1.25, z]} castShadow>
-          <boxGeometry args={[0.55, 3.6, 0.52]} />
+      {[-5.42, 5.42].map((z) => (
+        <mesh key={z} position={[0, 1.52, z]} castShadow>
+          <boxGeometry args={[0.55, 4.15, 0.52]} />
           <meshStandardMaterial color={colors.cream} roughness={0.8} />
         </mesh>
       ))}
-      <mesh position={[-0.34, 2.12, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[7.45, 0.12, 0.08]} />
+      <mesh position={[-0.34, 2.42, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[9.95, 0.12, 0.08]} />
         <meshStandardMaterial color={colors.steel} metalness={0.5} />
       </mesh>
-      {[-2.65, 0, 2.65].map((z) => (
-        <mesh key={z} position={[-0.37, 1.2, z]} rotation={[0, Math.PI / 2, 0]}>
-          <boxGeometry args={[2.05, 1.7, 0.07]} />
+      {[-3.5, 0, 3.5].map((z) => (
+        <mesh key={z} position={[-0.37, 1.35, z]} rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[2.45, 1.95, 0.07]} />
           <meshStandardMaterial color={colors.window} transparent opacity={0.3} />
         </mesh>
       ))}
-      <mesh position={[-0.38, 3.05, 0]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh position={[-0.38, 3.58, 0]} rotation={[0, Math.PI / 2, 0]}>
         <boxGeometry args={[2.1, 0.42, 0.07]} />
         <meshStandardMaterial color={colors.ink} />
       </mesh>
-      <mesh position={[-0.425, 3.05, 0]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh position={[-0.425, 3.58, 0]} rotation={[0, Math.PI / 2, 0]}>
         <boxGeometry args={[1.45, 0.045, 0.012]} />
         <meshBasicMaterial color={colors.cream} />
       </mesh>
@@ -528,47 +526,45 @@ function PlantDoor() {
 function Plant({ scrollProgress }) {
   return (
     <group>
-      <RoundedBox args={[18.7, 0.4, 11.2]} radius={0.35} smoothness={4} position={[-12.35, 0, 0]} receiveShadow>
+      <RoundedBox args={[23.2, 0.4, 14.2]} radius={0.35} smoothness={4} position={[-14.6, 0, 0]} receiveShadow>
         <meshStandardMaterial color="#bcc3b7" roughness={0.96} />
       </RoundedBox>
-      <mesh position={[-12.35, 0.25, -5.25]} receiveShadow>
-        <boxGeometry args={[18.2, 0.08, 0.2]} />
+      <mesh position={[-14.6, 0.25, -6.75]} receiveShadow>
+        <boxGeometry args={[22.7, 0.08, 0.2]} />
         <meshStandardMaterial color={colors.cream} />
       </mesh>
-      <mesh position={[-21.25, 1.75, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.25, 3.5, 10.5]} />
+      <mesh position={[-25.8, 2.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.25, 4.2, 13.5]} />
         <meshStandardMaterial color={colors.cream} roughness={0.84} />
       </mesh>
-      <mesh position={[-12.25, 1.75, -5.1]} castShadow receiveShadow>
-        <boxGeometry args={[18.25, 3.5, 0.26]} />
+      <mesh position={[-14.45, 2.1, -6.6]} castShadow receiveShadow>
+        <boxGeometry args={[22.7, 4.2, 0.26]} />
         <meshStandardMaterial color="#e4e3d8" roughness={0.84} />
       </mesh>
-      {[-18.3, -14.7, -11.1, -7.5].map((x) => (
-        <Window key={x} position={[x, 2.25, -4.95]} size={[1.72, 0.78]} color="#6f9196" />
+      {[-22.8, -18.3, -13.8, -9.3].map((x) => (
+        <Window key={x} position={[x, 2.65, -6.45]} size={[2.05, 0.92]} color="#6f9196" />
       ))}
-      <Conveyor position={[-13.25, 1, 0]} length={14} speed={1.05} />
-      {[
-        { z: 1.45, length: 1.48, rotation: -1.45, color: colors.coral },
-        { z: 0, length: 0.8, rotation: 0, color: colors.blue },
-        { z: -1.45, length: 1.48, rotation: 1.45, color: colors.green },
-      ].map(({ z, length, rotation, color }) => (
-        <Conveyor
-          key={z}
-          position={[-6.15, 1.12, z / 2]}
-          length={length}
-          rotation={rotation}
-          slope={0.14}
-          width={0.62}
-          railColor={color}
-          speed={1.12}
-        />
-      ))}
+      <Conveyor position={[-15.25, 1, 0]} length={18.1} speed={1.05} />
+      {loadingLanes.map((z) => {
+        const deltaX = 1.85
+        const length = Math.hypot(deltaX, z)
+        return (
+          <Conveyor
+            key={z}
+            position={[-5.275, 1.1, z / 2]}
+            length={length}
+            rotation={-Math.atan2(z, deltaX)}
+            slope={0.08}
+            speed={1.12}
+          />
+        )
+      })}
       <TunnelWasher />
       <IndustrialDryer />
       <LinenFolder />
       <PlantDoor />
-      {[-5.9, -4.9].map((x, index) => (
-        <group key={x} position={[x, 0.44, index ? 2.8 : -2.8]}>
+      {[-6.25, -5.15].map((x, index) => (
+        <group key={x} position={[x, 0.44, index ? 4.2 : -4.2]}>
           <RoundedBox args={[1.5, 0.85, 1.1]} radius={0.11} smoothness={3} position={[0, 0.42, 0]} castShadow>
             <meshStandardMaterial color={index ? colors.gold : colors.blue} roughness={0.76} />
           </RoundedBox>
@@ -626,32 +622,27 @@ function TruckModel({ accent }) {
         <boxGeometry args={[0.72, 0.18, 0.08]} />
         <meshStandardMaterial color={colors.darkInk} />
       </mesh>
-      {[-1, 0.5].flatMap((x) =>
-        [-0.72, 0.72].map((z) => (
-          <group key={`${x}-${z}`} position={[x, 0.28, z]} rotation={[Math.PI / 2, 0, 0]}>
-            <mesh castShadow>
-              <cylinderGeometry args={[0.32, 0.32, 0.2, 20]} />
-              <meshStandardMaterial color="#172426" roughness={0.8} />
+      {[-1.02, 0.92].flatMap((x) =>
+        [-0.82, 0.82].map((z) => (
+          <group key={`${x}-${z}`} position={[x, 0.52, z]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.37, 0.37, 0.42, 24]} />
+              <meshStandardMaterial color="#172426" roughness={0.84} />
             </mesh>
-            <mesh position={[0, 0.09, 0]}>
-              <cylinderGeometry args={[0.1, 0.1, 0.17, 12]} />
-              <meshStandardMaterial color={colors.steel} metalness={0.65} />
+            <mesh position={[0, 0, Math.sign(z) * 0.225]}>
+              <torusGeometry args={[0.28, 0.085, 10, 24]} />
+              <meshStandardMaterial color="#202e30" roughness={0.88} />
+            </mesh>
+            <mesh
+              position={[0, 0, Math.sign(z) * 0.24]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <cylinderGeometry args={[0.12, 0.12, 0.055, 18]} />
+              <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} />
             </mesh>
           </group>
         )),
       )}
-      {[-1, 0.5].map((x) => (
-        <group key={`wheel-cap-${x}`} position={[x, 0.54, 0.95]}>
-          <mesh castShadow>
-            <circleGeometry args={[0.28, 24]} />
-            <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
-          </mesh>
-          <mesh position={[0, 0, 0.012]}>
-            <circleGeometry args={[0.115, 18]} />
-            <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-      ))}
       {[-0.34, 0.34].map((z) => (
         <mesh key={z} position={[1.515, 0.72, z]} rotation={[0, Math.PI / 2, 0]}>
           <circleGeometry args={[0.09, 16]} />
@@ -963,7 +954,7 @@ export function RouteWorld({ scrollProgress }) {
         position={[-8, 18, 12]}
         intensity={1.85}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-28}
+        shadow-camera-left={-32}
         shadow-camera-right={28}
         shadow-camera-top={20}
         shadow-camera-bottom={-20}
@@ -972,10 +963,10 @@ export function RouteWorld({ scrollProgress }) {
       <CameraRig scrollProgress={scrollProgress} />
 
       <group position={[0, -0.22, 0]}>
-        <RoundedBox args={[45, 0.42, 27]} radius={0.6} smoothness={5} position={[-1.4, 0, 0]} receiveShadow>
+        <RoundedBox args={[51, 0.42, 29]} radius={0.6} smoothness={5} position={[-3.4, 0, 0]} receiveShadow>
           <meshStandardMaterial color="#bdc5b5" roughness={0.96} />
         </RoundedBox>
-        <RoundedBox args={[44.3, 0.08, 26.3]} radius={0.5} smoothness={4} position={[-1.4, 0.24, 0]} receiveShadow>
+        <RoundedBox args={[50.3, 0.08, 28.3]} radius={0.5} smoothness={4} position={[-3.4, 0.24, 0]} receiveShadow>
           <meshStandardMaterial color="#b3beaa" roughness={0.95} />
         </RoundedBox>
         <Plant scrollProgress={scrollProgress} />
