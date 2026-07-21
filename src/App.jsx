@@ -280,7 +280,7 @@ function HomeHero() {
             camera={{ position: [-9, 9, 12], fov: 35 }}
           >
             <Suspense fallback={null}>
-              <RouteWorld activeStage={activeStage} scrollProgress={scrollProgress} />
+              <RouteWorld scrollProgress={scrollProgress} />
               <Environment preset="city" environmentIntensity={0.22} />
             </Suspense>
           </Canvas>

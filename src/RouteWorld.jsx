@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Billboard, Float, RoundedBox } from '@react-three/drei'
+import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 
 const MOBILE_BREAKPOINT = 800
@@ -510,56 +510,6 @@ function Hotel({ position }) {
   )
 }
 
-function SmileBadge({ position, color, delay, activeStage, size = 1 }) {
-  const group = useRef()
-  const smileCurve = useMemo(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.3, -0.05, 0.08),
-        new THREE.Vector3(0, -0.24, 0.08),
-        new THREE.Vector3(0.3, -0.05, 0.08),
-      ]),
-    [],
-  )
-  const smileGeometry = useMemo(() => new THREE.TubeGeometry(smileCurve, 18, 0.045, 8, false), [smileCurve])
-
-  useFrame((state, delta) => {
-    const visible = activeStage === 3
-    const elapsed = Math.max(0, state.clock.elapsedTime - delay)
-    const targetScale = visible ? size : 0
-    const nextScale = THREE.MathUtils.damp(group.current.scale.x, targetScale, visible ? 4 : 6, delta)
-    group.current.scale.setScalar(nextScale)
-    group.current.position.y = THREE.MathUtils.damp(
-      group.current.position.y,
-      visible ? position[1] + 1.15 + Math.sin(elapsed * 1.6) * 0.12 : position[1] - 0.25,
-      3.5,
-      delta,
-    )
-  })
-
-  return (
-    <group ref={group} position={[position[0], position[1] - 0.25, position[2]]} scale={0}>
-      <Float speed={2} floatIntensity={0.12} rotationIntensity={0.08}>
-        <Billboard>
-          <mesh castShadow>
-            <circleGeometry args={[0.66, 40]} />
-            <meshStandardMaterial color={color} roughness={0.5} side={THREE.DoubleSide} />
-          </mesh>
-          {[-0.22, 0.22].map((x) => (
-            <mesh key={x} position={[x, 0.16, 0.06]}>
-              <circleGeometry args={[0.07, 18]} />
-              <meshBasicMaterial color={palette.ink} />
-            </mesh>
-          ))}
-          <mesh geometry={smileGeometry}>
-            <meshBasicMaterial color={palette.ink} />
-          </mesh>
-        </Billboard>
-      </Float>
-    </group>
-  )
-}
-
 function Shrub({ position, color = palette.grass, scale = 1 }) {
   return (
     <group position={position} scale={scale}>
@@ -685,7 +635,7 @@ function WorldDetails() {
   )
 }
 
-export function RouteWorld({ activeStage, scrollProgress }) {
+export function RouteWorld({ scrollProgress }) {
   return (
     <>
       <color attach="background" args={['#e8eadc']} />
@@ -740,28 +690,6 @@ export function RouteWorld({ activeStage, scrollProgress }) {
               <Component
                 key={`${customer.type}-${customer.position[0]}-${customer.position[1]}`}
                 position={[customer.position[0], 0.31, customer.position[1]]}
-              />
-            )
-          }),
-        )}
-        {customerSites.flatMap((sites, rowIndex) =>
-          sites.map((customer, customerIndex) => {
-            const badgeY =
-              customer.type === 'hospital' ? 3.05 : customer.type === 'restaurant' ? 2.75 : 4.55
-            const badgeColor =
-              customer.type === 'hospital'
-                ? palette.blue
-                : customer.type === 'restaurant'
-                  ? palette.coral
-                  : palette.gold
-            return (
-              <SmileBadge
-                key={`badge-${customer.type}-${customer.position[0]}-${customer.position[1]}`}
-                position={[customer.position[0], badgeY, customer.position[1]]}
-                color={badgeColor}
-                delay={(rowIndex * 3 + customerIndex) * 0.06}
-                activeStage={activeStage}
-                size={0.58}
               />
             )
           }),
