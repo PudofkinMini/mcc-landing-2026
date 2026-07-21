@@ -641,14 +641,14 @@ function TruckModel({ accent }) {
         )),
       )}
       {[-1, 0.5].map((x) => (
-        <group key={`wheel-cap-${x}`} position={[x, 0.28, 1]}>
-          <mesh scale={[1, 1, 0.38]} castShadow>
-            <sphereGeometry args={[0.32, 24, 16]} />
-            <meshStandardMaterial color="#172426" roughness={0.82} />
+        <group key={`wheel-cap-${x}`} position={[x, 0.38, 0.72]}>
+          <mesh castShadow>
+            <circleGeometry args={[0.31, 24]} />
+            <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
           </mesh>
-          <mesh position={[0, 0, 0.13]} scale={[1, 1, 0.42]}>
-            <sphereGeometry args={[0.12, 18, 12]} />
-            <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} />
+          <mesh position={[0, 0, 0.012]}>
+            <circleGeometry args={[0.115, 18]} />
+            <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} side={THREE.DoubleSide} />
           </mesh>
         </group>
       ))}
@@ -658,14 +658,6 @@ function TruckModel({ accent }) {
           <meshStandardMaterial color="#fff2b6" emissive="#ffe58a" emissiveIntensity={0.7} />
         </mesh>
       ))}
-      <mesh position={[-0.55, 0.9, 0.635]}>
-        <circleGeometry args={[0.22, 24]} />
-        <meshStandardMaterial color={colors.ink} />
-      </mesh>
-      <mesh position={[-0.55, 0.9, 0.646]}>
-        <torusGeometry args={[0.12, 0.025, 8, 18, Math.PI]} />
-        <meshBasicMaterial color={colors.cream} />
-      </mesh>
     </group>
   )
 }
