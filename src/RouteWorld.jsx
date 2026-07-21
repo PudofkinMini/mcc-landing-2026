@@ -56,7 +56,7 @@ const processCurve = new THREE.CatmullRomCurve3(
     new THREE.Vector3(-15.55, 1.08, 0),
     new THREE.Vector3(-12.2, 1.08, 0),
     new THREE.Vector3(-8.55, 1.08, 0),
-    new THREE.Vector3(-6.2, 1.08, 0),
+    new THREE.Vector3(-7.52, 1.08, 0),
   ],
   false,
   'centripetal',
@@ -65,7 +65,36 @@ const processCurve = new THREE.CatmullRomCurve3(
 const loadingLanes = [2.4, 0, -2.4]
 // From this camera angle, negative Z is the top loading bay on screen.
 const linenTruckOrder = [2, 1, 0]
-const truckHeight = 0.44
+const truckHeight = 0.62
+const truckRearX = -6.02
+
+const loadingForkCurves = loadingLanes.map((z) => {
+  const direction = Math.sign(z)
+  return new THREE.CatmullRomCurve3(
+    [
+      new THREE.Vector3(-7.5, 1.08, direction * 0.58),
+      new THREE.Vector3(-7.02, 1.1, z * 0.35),
+      new THREE.Vector3(-6.38, 1.12, z * 0.76),
+      new THREE.Vector3(truckRearX, 1.14, z),
+    ],
+    false,
+    'centripetal',
+  )
+})
+
+const loadingTransferCurves = loadingLanes.map((z) =>
+  new THREE.CatmullRomCurve3(
+    [
+      new THREE.Vector3(-7.52, 1.33, 0),
+      new THREE.Vector3(-7.02, 1.35, z * 0.32),
+      new THREE.Vector3(-6.4, 1.38, z * 0.74),
+      new THREE.Vector3(truckRearX, 1.4, z),
+      new THREE.Vector3(-5.5, 1.43, z),
+    ],
+    false,
+    'centripetal',
+  ),
+)
 
 const customerSites = [
   {
@@ -241,6 +270,140 @@ function Conveyor({
   )
 }
 
+function createRibbonGeometry(curve, width, thickness, segments = 36) {
+  const positions = []
+  const indices = []
+  const up = new THREE.Vector3(0, 1, 0)
+  const point = new THREE.Vector3()
+  const tangent = new THREE.Vector3()
+  const lateral = new THREE.Vector3()
+
+  for (let index = 0; index <= segments; index += 1) {
+    const progress = index / segments
+    curve.getPointAt(progress, point)
+    curve.getTangentAt(progress, tangent).normalize()
+    lateral.crossVectors(up, tangent).normalize().multiplyScalar(width / 2)
+
+    positions.push(
+      point.x + lateral.x, point.y + thickness / 2, point.z + lateral.z,
+      point.x - lateral.x, point.y + thickness / 2, point.z - lateral.z,
+      point.x + lateral.x, point.y - thickness / 2, point.z + lateral.z,
+      point.x - lateral.x, point.y - thickness / 2, point.z - lateral.z,
+    )
+  }
+
+  for (let index = 0; index < segments; index += 1) {
+    const current = index * 4
+    const next = (index + 1) * 4
+    indices.push(
+      current, next, current + 1,
+      current + 1, next, next + 1,
+      current + 2, current + 3, next + 2,
+      current + 3, next + 3, next + 2,
+      current, current + 2, next,
+      current + 2, next + 2, next,
+      current + 1, next + 1, current + 3,
+      current + 3, next + 1, next + 3,
+    )
+  }
+
+  indices.push(0, 1, 2, 1, 3, 2)
+  const last = segments * 4
+  indices.push(last, last + 2, last + 1, last + 1, last + 2, last + 3)
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3),
+  )
+  geometry.setIndex(indices)
+  geometry.computeVertexNormals()
+  return geometry
+}
+
+function offsetCurve(curve, lateralOffset, verticalOffset = 0) {
+  const up = new THREE.Vector3(0, 1, 0)
+  const point = new THREE.Vector3()
+  const tangent = new THREE.Vector3()
+  const lateral = new THREE.Vector3()
+  const points = Array.from({ length: 37 }, (_, index) => {
+    const progress = index / 36
+    curve.getPointAt(progress, point)
+    curve.getTangentAt(progress, tangent).normalize()
+    lateral.crossVectors(up, tangent).normalize()
+    return point
+      .clone()
+      .addScaledVector(lateral, lateralOffset)
+      .addScaledVector(up, verticalOffset)
+  })
+  return new THREE.CatmullRomCurve3(points, false, 'centripetal')
+}
+
+function CurvedConveyor({ curve, width = 0.86 }) {
+  const bodyGeometry = useMemo(
+    () => createRibbonGeometry(curve, width, 0.16),
+    [curve, width],
+  )
+  const beltCurve = useMemo(() => offsetCurve(curve, 0, 0.1), [curve])
+  const beltGeometry = useMemo(
+    () => createRibbonGeometry(beltCurve, width - 0.16, 0.045),
+    [beltCurve, width],
+  )
+  const railCurves = useMemo(
+    () => [
+      offsetCurve(curve, width / 2 + 0.045, 0.16),
+      offsetCurve(curve, -width / 2 - 0.045, 0.16),
+    ],
+    [curve, width],
+  )
+  const rollers = useMemo(() => {
+    const count = Math.max(3, Math.floor(curve.getLength() / 0.46))
+    const up = new THREE.Vector3(0, 1, 0)
+    return Array.from({ length: count }, (_, index) => {
+      const progress = (index + 0.5) / count
+      const position = curve.getPointAt(progress)
+      position.y += 0.145
+      const tangent = curve.getTangentAt(progress).normalize()
+      const lateral = new THREE.Vector3().crossVectors(up, tangent).normalize()
+      return {
+        position,
+        quaternion: new THREE.Quaternion().setFromUnitVectors(up, lateral),
+      }
+    })
+  }, [curve])
+
+  useEffect(
+    () => () => {
+      bodyGeometry.dispose()
+      beltGeometry.dispose()
+    },
+    [beltGeometry, bodyGeometry],
+  )
+
+  return (
+    <group>
+      <mesh geometry={bodyGeometry} receiveShadow>
+        <meshStandardMaterial color={colors.darkInk} roughness={0.68} />
+      </mesh>
+      <mesh geometry={beltGeometry}>
+        <meshStandardMaterial color={colors.blue} roughness={0.42} metalness={0.22} />
+      </mesh>
+      {railCurves.map((railCurve, index) => (
+        <mesh key={index}>
+          <tubeGeometry args={[railCurve, 36, 0.04, 8, false]} />
+          <meshStandardMaterial color={colors.steel} metalness={0.3} roughness={0.42} />
+        </mesh>
+      ))}
+      {rollers.map(({ position, quaternion }, index) => (
+        <mesh key={index} position={position} quaternion={quaternion}>
+          <cylinderGeometry args={[0.045, 0.045, width - 0.14, 10]} />
+          <meshStandardMaterial color="#b9c1bb" metalness={0.65} roughness={0.28} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function LinenStack({ color = colors.paleBlue }) {
   return (
     <group>
@@ -267,18 +430,6 @@ function LinenStack({ color = colors.paleBlue }) {
 function LinenLoads({ scrollProgress }) {
   const loads = useRef([])
   const processPoint = useMemo(() => new THREE.Vector3(), [])
-  const transferStart = useMemo(
-    () => new THREE.Vector3(-6.2, 1.33, 0),
-    [],
-  )
-  const destination = useMemo(
-    () =>
-      linenTruckOrder.map(
-        (truckIndex) =>
-          new THREE.Vector3(-4.55, 1.52, loadingLanes[truckIndex]),
-      ),
-    [],
-  )
 
   useFrame(() => {
     loads.current.forEach((load, index) => {
@@ -299,12 +450,11 @@ function LinenLoads({ scrollProgress }) {
           LINEN_TIMELINE.processEnd,
           1,
         )
-        load.position.lerpVectors(
-          transferStart,
-          destination[index],
+        loadingTransferCurves[linenTruckOrder[index]].getPointAt(
           transferProgress,
+          processPoint,
         )
-        load.position.y += Math.sin(transferProgress * Math.PI) * 0.12
+        load.position.copy(processPoint)
         load.scale.setScalar(THREE.MathUtils.lerp(1, 0.54, transferProgress))
       }
 
@@ -556,20 +706,10 @@ function Plant({ scrollProgress }) {
       {[-22.8, -18.3, -13.8, -9.3].map((x) => (
         <Window key={x} position={[x, 2.65, -6.45]} size={[2.05, 0.92]} color="#6f9196" />
       ))}
-      <Conveyor position={[-15.25, 1, 0]} length={18.1} />
-      {loadingLanes.map((z) => {
-        const deltaX = 1.85
-        const length = Math.hypot(deltaX, z)
-        return (
-          <Conveyor
-            key={z}
-            position={[-5.275, 1.1, z / 2]}
-            length={length}
-            rotation={-Math.atan2(z, deltaX)}
-            slope={0.08}
-          />
-        )
-      })}
+      <Conveyor position={[-15.91, 1, 0]} length={16.78} />
+      {loadingForkCurves.map((curve, index) => (
+        <CurvedConveyor key={loadingLanes[index]} curve={curve} />
+      ))}
       <TunnelWasher />
       <IndustrialDryer />
       <LinenFolder />

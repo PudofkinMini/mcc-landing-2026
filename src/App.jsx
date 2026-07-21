@@ -226,16 +226,74 @@ function HomeHero() {
   )
 
   useEffect(() => {
-    let frame = 0
+    let measureFrame = 0
+    let momentumFrame = 0
+    let lastTime = 0
+    let currentProgress = 0
+    let targetProgress = 0
+    let velocity = 0
+    let initialized = false
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    const animateProgress = (time) => {
+      momentumFrame = 0
+      const delta = lastTime
+        ? Math.min((time - lastTime) / 1000, 1 / 30)
+        : 1 / 60
+      lastTime = time
+
+      const stiffness = window.innerWidth <= 800 ? 72 : 88
+      const damping = 2 * Math.sqrt(stiffness) * 0.88
+      velocity +=
+        ((targetProgress - currentProgress) * stiffness - velocity * damping) *
+        delta
+      currentProgress += velocity * delta
+
+      if (currentProgress <= 0 || currentProgress >= 1) {
+        currentProgress = clampProgress(currentProgress)
+        velocity = 0
+      }
+
+      const settled =
+        Math.abs(targetProgress - currentProgress) < 0.0001 &&
+        Math.abs(velocity) < 0.0005
+
+      if (settled) {
+        currentProgress = targetProgress
+        velocity = 0
+      }
+
+      setScrollProgress(currentProgress)
+      if (!settled) {
+        momentumFrame = window.requestAnimationFrame(animateProgress)
+      }
+    }
+
     const updateProgress = () => {
-      frame = 0
+      measureFrame = 0
       if (!trackRef.current) return
       const rect = trackRef.current.getBoundingClientRect()
       const distance = Math.max(1, rect.height - window.innerHeight)
-      setScrollProgress(clampProgress(-rect.top / distance))
+      targetProgress = clampProgress(-rect.top / distance)
+
+      if (!initialized || reducedMotion.matches) {
+        initialized = true
+        currentProgress = targetProgress
+        velocity = 0
+        setScrollProgress(currentProgress)
+        return
+      }
+
+      if (!momentumFrame) {
+        lastTime = 0
+        momentumFrame = window.requestAnimationFrame(animateProgress)
+      }
     }
+
     const requestUpdate = () => {
-      if (!frame) frame = window.requestAnimationFrame(updateProgress)
+      if (!measureFrame) {
+        measureFrame = window.requestAnimationFrame(updateProgress)
+      }
     }
 
     updateProgress()
@@ -244,7 +302,8 @@ function HomeHero() {
     return () => {
       window.removeEventListener('scroll', requestUpdate)
       window.removeEventListener('resize', requestUpdate)
-      if (frame) window.cancelAnimationFrame(frame)
+      if (measureFrame) window.cancelAnimationFrame(measureFrame)
+      if (momentumFrame) window.cancelAnimationFrame(momentumFrame)
     }
   }, [])
 
