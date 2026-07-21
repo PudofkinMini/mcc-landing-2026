@@ -1,7 +1,7 @@
 export const LINEN_TIMELINE = {
   end: 0.39,
-  initialMiddleProgress: 0.08,
-  spacing: 0.08,
+  initialMiddleProgress: 0.03,
+  spacing: 0.03,
   processEnd: 0.78,
 }
 
