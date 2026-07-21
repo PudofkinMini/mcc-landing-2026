@@ -18,7 +18,6 @@ const colors = {
   green: '#16865c',
   grass: '#9caf7b',
   concrete: '#c9cec1',
-  road: '#747e78',
   steel: '#8c9a94',
   window: '#31555c',
 }
@@ -113,14 +112,14 @@ function CameraRig({ scrollProgress }) {
     desiredTarget.lerpVectors(processPoint, truckFocus, followBlend)
 
     const reveal = smooth(scrollProgress, 0.5, 0.69)
-    desiredTarget.lerp(new THREE.Vector3(-2.4, 0.65, 0), reveal)
+    desiredTarget.lerp(new THREE.Vector3(-5.2, 0.65, 0), reveal)
 
     const closeOffset = mobile
       ? new THREE.Vector3(2, 11.8, 14.5)
       : new THREE.Vector3(1.8, 9.8, 12.8)
     const wideOffset = mobile
-      ? new THREE.Vector3(-6, 31, 38)
-      : new THREE.Vector3(-7, 27, 33)
+      ? new THREE.Vector3(-7, 34, 42)
+      : new THREE.Vector3(-8, 30, 38)
     desiredPosition.copy(desiredTarget).add(closeOffset.lerp(wideOffset, reveal))
     desiredPosition.x += pointer.x * 0.35
     desiredPosition.y += pointer.y * 0.18
@@ -228,6 +227,46 @@ function ProcessLoad({ scrollProgress }) {
     <group ref={load}>
       <LinenStack />
     </group>
+  )
+}
+
+function TransferLoads({ scrollProgress }) {
+  const loads = useRef([])
+  const start = useMemo(() => new THREE.Vector3(-9.05, 0.72, 0), [])
+  const destination = useMemo(
+    () => [
+      new THREE.Vector3(-6.35, 1.1, 1.45),
+      new THREE.Vector3(-6.35, 1.1, 0),
+      new THREE.Vector3(-6.35, 1.1, -1.45),
+    ],
+    [],
+  )
+
+  useFrame(() => {
+    const progress = smooth(scrollProgress, 0.265, 0.365)
+    loads.current.forEach((load, index) => {
+      if (!load) return
+      load.position.lerpVectors(start, destination[index], progress)
+      load.position.y += Math.sin(progress * Math.PI) * (0.8 + index * 0.08)
+      load.visible = scrollProgress >= 0.245 && scrollProgress < 0.375
+      load.scale.setScalar(THREE.MathUtils.lerp(0.86, 0.52, progress))
+    })
+  })
+
+  return (
+    <>
+      {customerSites.map((site, index) => (
+        <group
+          key={site.id}
+          ref={(load) => {
+            loads.current[index] = load
+          }}
+          visible={false}
+        >
+          <LinenStack color={index === 0 ? '#f2c2aa' : index === 1 ? colors.paleBlue : '#b7d5c3'} />
+        </group>
+      ))}
+    </>
   )
 }
 
@@ -410,6 +449,7 @@ function Plant({ scrollProgress }) {
         </group>
       ))}
       <ProcessLoad scrollProgress={scrollProgress} />
+      <TransferLoads scrollProgress={scrollProgress} />
     </group>
   )
 }
@@ -493,12 +533,12 @@ function MovingTruck({ index, scrollProgress }) {
 
 function RoadNetwork() {
   return (
-    <group position={[0, 0.31, 0]}>
+    <group position={[0, 0.36, 0]}>
       {customerSites.map((site) => (
         <group key={site.id}>
           <mesh position={[4.4, 0, site.lane]} receiveShadow>
             <boxGeometry args={[19.8, 0.1, 2.75]} />
-            <meshStandardMaterial color={colors.road} roughness={0.98} />
+            <meshStandardMaterial color="#68736e" roughness={0.98} />
           </mesh>
           {Array.from({ length: 9 }, (_, index) => (
             <mesh key={index} position={[-3.2 + index * 2.05, 0.065, site.lane]}>
@@ -510,7 +550,7 @@ function RoadNetwork() {
       ))}
       <mesh position={[-1.8, -0.01, 0]} receiveShadow>
         <boxGeometry args={[3.2, 0.1, 18.75]} />
-        <meshStandardMaterial color={colors.road} roughness={0.98} />
+        <meshStandardMaterial color="#68736e" roughness={0.98} />
       </mesh>
       {customerSites.flatMap((site) =>
         [-0.72, -0.24, 0.24, 0.72].map((offset) => (
