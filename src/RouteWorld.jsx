@@ -626,7 +626,7 @@ function TruckModel({ accent }) {
         <boxGeometry args={[0.72, 0.18, 0.08]} />
         <meshStandardMaterial color={colors.darkInk} />
       </mesh>
-      {[-1, 0.95].flatMap((x) =>
+      {[-1, 0.5].flatMap((x) =>
         [-0.72, 0.72].map((z) => (
           <group key={`${x}-${z}`} position={[x, 0.28, z]} rotation={[Math.PI / 2, 0, 0]}>
             <mesh castShadow>
@@ -640,8 +640,8 @@ function TruckModel({ accent }) {
           </group>
         )),
       )}
-      {[-1, 0.95].map((x) => (
-        <group key={`wheel-cap-${x}`} position={[x, 0.28, 0.82]}>
+      {[-1, 0.5].map((x) => (
+        <group key={`wheel-cap-${x}`} position={[x, 0.28, 1]}>
           <mesh scale={[1, 1, 0.38]} castShadow>
             <sphereGeometry args={[0.32, 24, 16]} />
             <meshStandardMaterial color="#172426" roughness={0.82} />
