@@ -12,8 +12,8 @@ const palette = {
   coral: '#f2563d',
   blue: '#3d88b8',
   gold: '#e9aa3c',
-  routeOut: '#00643c',
-  routeOutGlow: '#47d990',
+  routeOut: '#008e57',
+  routeOutGlow: '#62eca4',
   routeBack: '#b93229',
   routeBackGlow: '#ff7463',
   cream: '#f4f0e4',
@@ -60,8 +60,8 @@ const routes = warehouseSites.flatMap((warehouse, warehouseIndex) =>
     const arc = [0.46, -0.58, 0.72][customerIndex] * (warehouseIndex === 1 ? -1 : 1)
     const boundaryZ =
       warehouse.returnEdge === 'top'
-        ? -13.25 - warehouseIndex * 0.65 - customerIndex * 0.32
-        : 13.35 + customerIndex * 0.34
+        ? -11.8 - warehouseIndex * 0.7 - customerIndex * 0.32
+        : 11.85 + customerIndex * 0.35
     const rightEdge = 20 + customerIndex * 0.32
     const leftEdge = warehouseX - 2.4 - customerIndex * 0.28
 
@@ -102,10 +102,9 @@ const speedProfiles = [
 
 const toCurve = (points) =>
   new THREE.CatmullRomCurve3(
-    points.map(([x, z]) => new THREE.Vector3(x, 0.9, z)),
+    points.map(([x, z]) => new THREE.Vector3(x, 0.98, z)),
     false,
-    'catmullrom',
-    0.5,
+    'centripetal',
   )
 
 const routeCurves = routes.map((route) => ({
