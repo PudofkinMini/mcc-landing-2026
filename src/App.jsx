@@ -14,19 +14,19 @@ const stages = [
     label: 'Deliver',
     eyebrow: '02 / Deliver',
     title: 'Every route, ready to respond.',
-    text: 'Give route teams the right customer information in the moment—and keep the plant and office in step as service changes.',
+    text: 'Coordinate every route from every plant, giving teams the right customer information in the moment as service changes.',
   },
   {
     label: 'Reconcile',
     eyebrow: '03 / Reconcile',
     title: 'Complexity, handled.',
-    text: 'From soil counts and cart loads to signatures and invoicing, the hard work happens once. The routine work simply happens.',
+    text: 'As each route passes through healthcare, hospitality, and food service, every count, signature, and exception stays connected.',
   },
   {
     label: 'Decide',
     eyebrow: '04 / Decide',
     title: 'See today. Shape tomorrow.',
-    text: 'Turn live route activity and long-term operating history into clearer decisions for every level of your business.',
+    text: 'Close every loop back at the plant, then turn live route activity and operating history into clearer decisions.',
   },
 ]
 
@@ -301,8 +301,8 @@ function HomeHero() {
         </div>
 
         <div className="hero-proof">
-          <strong>15+</strong>
-          <span>years in field-service software</span>
+          <strong>09</strong>
+          <span>live routes moving as one operation</span>
         </div>
       </div>
       <Loader
