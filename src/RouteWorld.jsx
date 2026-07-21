@@ -113,10 +113,14 @@ function CameraRig({ scrollProgress }) {
     desiredTarget.lerpVectors(processPoint, truckFocus, followBlend)
 
     const reveal = smooth(scrollProgress, 0.5, 0.69)
-    desiredTarget.lerp(new THREE.Vector3(1.4, 0.65, 0), reveal)
+    desiredTarget.lerp(new THREE.Vector3(-2.4, 0.65, 0), reveal)
 
-    const closeOffset = mobile ? new THREE.Vector3(7.5, 10.8, 12.5) : new THREE.Vector3(7.2, 8.1, 10.2)
-    const wideOffset = mobile ? new THREE.Vector3(18, 29, 34) : new THREE.Vector3(18, 24, 27)
+    const closeOffset = mobile
+      ? new THREE.Vector3(2, 11.8, 14.5)
+      : new THREE.Vector3(1.8, 9.8, 12.8)
+    const wideOffset = mobile
+      ? new THREE.Vector3(-6, 31, 38)
+      : new THREE.Vector3(-7, 27, 33)
     desiredPosition.copy(desiredTarget).add(closeOffset.lerp(wideOffset, reveal))
     desiredPosition.x += pointer.x * 0.35
     desiredPosition.y += pointer.y * 0.18
@@ -489,7 +493,7 @@ function MovingTruck({ index, scrollProgress }) {
 
 function RoadNetwork() {
   return (
-    <group position={[0, 0.22, 0]}>
+    <group position={[0, 0.31, 0]}>
       {customerSites.map((site) => (
         <group key={site.id}>
           <mesh position={[4.4, 0, site.lane]} receiveShadow>
