@@ -44,21 +44,21 @@ const customerSites = [
   {
     id: 'restaurant',
     position: [11.5, 0.3, 7.9],
-    stop: [8.4, 0.4, 7.9],
+    stop: [8.4, 0.26, 7.9],
     lane: 7.9,
     color: colors.coral,
   },
   {
     id: 'hotel',
     position: [12.7, 0.3, 0],
-    stop: [9.4, 0.4, 0],
+    stop: [9.4, 0.26, 0],
     lane: 0,
     color: colors.blue,
   },
   {
     id: 'hospital',
     position: [12.5, 0.3, -8.1],
-    stop: [8.7, 0.4, -8.1],
+    stop: [8.7, 0.26, -8.1],
     lane: -8.1,
     color: colors.green,
   },
@@ -68,11 +68,11 @@ const truckCurves = customerSites.map((site, index) => {
   const startZ = loadingLanes[index]
   return new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(-4.35, 0.4, startZ),
-      new THREE.Vector3(-2.8, 0.4, startZ),
-      new THREE.Vector3(-0.8, 0.4, startZ + (site.lane - startZ) * 0.24),
-      new THREE.Vector3(2.3, 0.4, site.lane),
-      new THREE.Vector3(site.stop[0] - 2.2, 0.4, site.lane),
+      new THREE.Vector3(-4.35, 0.26, startZ),
+      new THREE.Vector3(-2.8, 0.26, startZ),
+      new THREE.Vector3(-0.8, 0.26, startZ + (site.lane - startZ) * 0.24),
+      new THREE.Vector3(2.3, 0.26, site.lane),
+      new THREE.Vector3(site.stop[0] - 2.2, 0.26, site.lane),
       new THREE.Vector3(...site.stop),
     ],
     false,
@@ -623,18 +623,18 @@ function TruckModel({ accent }) {
         <meshStandardMaterial color={colors.darkInk} />
       </mesh>
       {[-1.02, 0.92].flatMap((x) =>
-        [-0.79, 0.79].map((z) => (
-          <group key={`${x}-${z}`} position={[x, 0.39, z]}>
+        [-0.82, 0.82].map((z) => (
+          <group key={`${x}-${z}`} position={[x, 0.52, z]}>
             <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[0.36, 0.36, 0.36, 24]} />
+              <cylinderGeometry args={[0.37, 0.37, 0.42, 24]} />
               <meshStandardMaterial color="#172426" roughness={0.84} />
             </mesh>
-            <mesh position={[0, 0, Math.sign(z) * 0.195]}>
-              <torusGeometry args={[0.27, 0.085, 10, 24]} />
+            <mesh position={[0, 0, Math.sign(z) * 0.225]}>
+              <torusGeometry args={[0.28, 0.085, 10, 24]} />
               <meshStandardMaterial color="#202e30" roughness={0.88} />
             </mesh>
             <mesh
-              position={[0, 0, Math.sign(z) * 0.21]}
+              position={[0, 0, Math.sign(z) * 0.24]}
               rotation={[Math.PI / 2, 0, 0]}
             >
               <cylinderGeometry args={[0.12, 0.12, 0.055, 18]} />
