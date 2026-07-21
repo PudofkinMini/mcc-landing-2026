@@ -637,15 +637,15 @@ function TruckModel({ accent }) {
         )),
       )}
       {[-0.18, 1.13].flatMap((x) =>
-        [-0.835, 0.835].map((z) => (
+        [-0.9, 0.9].map((z) => (
           <group key={`wheel-cap-${x}-${z}`} position={[x, 0.28, z]} rotation={[0, z < 0 ? Math.PI : 0, 0]}>
             <mesh castShadow>
-              <circleGeometry args={[0.32, 24]} />
-              <meshStandardMaterial color="#172426" roughness={0.82} />
+              <torusGeometry args={[0.22, 0.1, 12, 24]} />
+              <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
             </mesh>
             <mesh position={[0, 0, 0.012]}>
-              <circleGeometry args={[0.105, 18]} />
-              <meshStandardMaterial color={colors.steel} metalness={0.68} roughness={0.3} />
+              <circleGeometry args={[0.12, 18]} />
+              <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} side={THREE.DoubleSide} />
             </mesh>
           </group>
         )),
