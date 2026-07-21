@@ -23,7 +23,6 @@ const colors = {
   window: '#31555c',
 }
 
-const clamp01 = (value) => THREE.MathUtils.clamp(value, 0, 1)
 const smooth = (value, start, end) => THREE.MathUtils.smoothstep(value, start, end)
 
 const processCurve = new THREE.CatmullRomCurve3(
