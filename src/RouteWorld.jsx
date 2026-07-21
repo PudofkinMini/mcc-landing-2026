@@ -67,8 +67,9 @@ const processConveyorEnd = -7.52
 const loadingLanes = [2.4, 0, -2.4]
 // From this camera angle, negative Z is the top loading bay on screen.
 const linenTruckOrder = [2, 1, 0]
-const truckHeight = 0.62
+const truckHeight = 0.82
 const truckRearX = -6.02
+const customerSiteElevation = 0.2
 
 const loadingForkCurves = loadingLanes.map((z) => {
   const direction = Math.sign(z)
@@ -101,27 +102,27 @@ const loadingTransferCurves = loadingLanes.map((z) =>
 const customerSites = [
   {
     id: 'restaurant',
-    position: [11.5, 0.3, 7.9],
+    position: [11.5, 0.3 + customerSiteElevation, 7.9],
     stop: [8.4, truckHeight, 7.9],
     lane: 7.9,
     color: colors.coral,
-    roofY: 2.4,
+    roofY: 2.4 + customerSiteElevation,
   },
   {
     id: 'hotel',
-    position: [12.7, 0.3, 0],
+    position: [12.7, 0.3 + customerSiteElevation, 0],
     stop: [9.4, truckHeight, 0],
     lane: 0,
     color: colors.blue,
-    roofY: 6.9,
+    roofY: 6.9 + customerSiteElevation,
   },
   {
     id: 'hospital',
-    position: [12.5, 0.3, -8.1],
+    position: [12.5, 0.3 + customerSiteElevation, -8.1],
     stop: [8.7, truckHeight, -8.1],
     lane: -8.1,
     color: colors.green,
-    roofY: 5.1,
+    roofY: 5.1 + customerSiteElevation,
   },
 ]
 
