@@ -641,14 +641,14 @@ function TruckModel({ accent }) {
         )),
       )}
       {[-1, 0.95].map((x) => (
-        <group key={`wheel-cap-${x}`} position={[x, 0.28, 0.94]}>
-          <mesh castShadow>
-            <torusGeometry args={[0.22, 0.1, 12, 24]} />
-            <meshStandardMaterial color="#172426" roughness={0.82} side={THREE.DoubleSide} />
+        <group key={`wheel-cap-${x}`} position={[x, 0.28, 0.82]}>
+          <mesh scale={[1, 1, 0.38]} castShadow>
+            <sphereGeometry args={[0.32, 24, 16]} />
+            <meshStandardMaterial color="#172426" roughness={0.82} />
           </mesh>
-          <mesh position={[0, 0, 0.012]}>
-            <circleGeometry args={[0.12, 18]} />
-            <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} side={THREE.DoubleSide} />
+          <mesh position={[0, 0, 0.13]} scale={[1, 1, 0.42]}>
+            <sphereGeometry args={[0.12, 18, 12]} />
+            <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} />
           </mesh>
         </group>
       ))}
