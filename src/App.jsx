@@ -5,28 +5,28 @@ import { RouteWorld } from './RouteWorld'
 
 const stages = [
   {
-    label: 'Configure',
-    eyebrow: '01 / Configure',
-    title: 'Your operation. Your rules.',
-    text: 'M-LINX fits the contracts, pricing, routes, inventory, and exceptions that make your textile rental business yours.',
+    label: 'Process',
+    eyebrow: '01 / Inside the plant',
+    title: 'Every piece moves with purpose.',
+    text: 'Follow the work from the wash floor to a service-ready load—with every handoff visible in M-LINX.',
+  },
+  {
+    label: 'Load',
+    eyebrow: '02 / Ready to roll',
+    title: 'Clean. Counted. On the right truck.',
+    text: 'Plant teams and route teams share one dependable picture of what is ready, what is loaded, and where it belongs.',
   },
   {
     label: 'Deliver',
-    eyebrow: '02 / Deliver',
-    title: 'Every route, ready to respond.',
-    text: 'Give route teams the right customer information in the moment—and keep the plant and office in step as service changes.',
+    eyebrow: '03 / Out on route',
+    title: 'Three routes. One connected view.',
+    text: 'Give every driver the right customer details in the moment while the plant and office stay in step.',
   },
   {
-    label: 'Reconcile',
-    eyebrow: '03 / Reconcile',
-    title: 'Complexity, handled.',
-    text: 'From soil counts and cart loads to signatures and invoicing, the hard work happens once. The routine work simply happens.',
-  },
-  {
-    label: 'Decide',
-    eyebrow: '04 / Decide',
-    title: 'See today. Shape tomorrow.',
-    text: 'Turn live route activity and long-term operating history into clearer decisions for every level of your business.',
+    label: 'Serve',
+    eyebrow: '04 / Service delivered',
+    title: 'The right linen, right where it belongs.',
+    text: 'From restaurants and hotels to major healthcare facilities, every stop is accurate, accountable, and ready for what comes next.',
   },
 ]
 
@@ -258,7 +258,7 @@ function HomeHero() {
   }
 
   return (
-    <section className="hero-track" ref={trackRef} aria-label="The M-LINX route story">
+    <section className="hero-track" ref={trackRef} aria-label="The M-LINX plant-to-customer story">
       <div className={`hero-frame stage-${activeStage + 1}`}>
         <div className="hero" aria-live="polite">
           <div className="hero-kicker">
@@ -293,7 +293,7 @@ function HomeHero() {
         />
 
         <div className="scroll-hint">
-          <span>{activeStage === stages.length - 1 ? 'Keep exploring' : 'Scroll the route'}</span>
+          <span>{activeStage === stages.length - 1 ? 'Keep exploring' : 'Follow the journey'}</span>
           <svg viewBox="0 0 20 30" aria-hidden="true">
             <rect x="1" y="1" width="18" height="28" rx="9" />
             <circle cx="10" cy="8" r="2" />
