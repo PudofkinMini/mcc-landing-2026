@@ -623,18 +623,18 @@ function TruckModel({ accent }) {
         <meshStandardMaterial color={colors.darkInk} />
       </mesh>
       {[-1.02, 0.92].flatMap((x) =>
-        [-0.71, 0.71].map((z) => (
-          <group key={`${x}-${z}`} position={[x, 0.43, z]}>
+        [-0.79, 0.79].map((z) => (
+          <group key={`${x}-${z}`} position={[x, 0.39, z]}>
             <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[0.36, 0.36, 0.3, 24]} />
+              <cylinderGeometry args={[0.36, 0.36, 0.36, 24]} />
               <meshStandardMaterial color="#172426" roughness={0.84} />
             </mesh>
-            <mesh position={[0, 0, Math.sign(z) * 0.165]}>
+            <mesh position={[0, 0, Math.sign(z) * 0.195]}>
               <torusGeometry args={[0.27, 0.085, 10, 24]} />
               <meshStandardMaterial color="#202e30" roughness={0.88} />
             </mesh>
             <mesh
-              position={[0, 0, Math.sign(z) * 0.18]}
+              position={[0, 0, Math.sign(z) * 0.21]}
               rotation={[Math.PI / 2, 0, 0]}
             >
               <cylinderGeometry args={[0.12, 0.12, 0.055, 18]} />
