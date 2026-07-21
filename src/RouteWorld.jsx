@@ -433,8 +433,8 @@ function Plant({ scrollProgress }) {
       {[-18.3, -14.7, -11.1, -7.5].map((x) => (
         <Window key={x} position={[x, 2.25, -4.95]} size={[1.72, 0.78]} color="#6f9196" />
       ))}
-      <Conveyor position={[-17.8, 0.78, 0]} length={6.2} />
-      <Conveyor position={[-12.15, 0.61, 0]} length={2.6} slope={-0.16} />
+      <Conveyor position={[-17.8, 1, 0]} length={6.2} />
+      <Conveyor position={[-12.15, 0.83, 0]} length={2.6} slope={-0.16} />
       <TunnelWasher />
       <IndustrialDryer />
       <PlantDoor />
