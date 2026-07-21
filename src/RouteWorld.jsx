@@ -113,6 +113,11 @@ function CameraRig({ scrollProgress }) {
 
     const reveal = smooth(scrollProgress, 0.5, 0.69)
     desiredTarget.lerp(new THREE.Vector3(-5.2, 0.65, 0), reveal)
+    if (mobile && camera.isPerspectiveCamera) {
+      const nextFov = THREE.MathUtils.lerp(74, 92, reveal)
+      camera.fov = THREE.MathUtils.damp(camera.fov, nextFov, 4, delta)
+      camera.updateProjectionMatrix()
+    }
 
     const closeOffset = mobile
       ? new THREE.Vector3(2, 11.8, 14.5)
@@ -160,7 +165,7 @@ function Conveyor({ position, length, rotation = 0, slope = 0 }) {
       </mesh>
       <mesh position={[0, 0.1, 0]}>
         <boxGeometry args={[length - 0.08, 0.06, 0.84]} />
-        <meshStandardMaterial color="#42575a" roughness={0.5} metalness={0.25} />
+        <meshStandardMaterial color={colors.blue} roughness={0.42} metalness={0.22} />
       </mesh>
       {rollers.map((x) => (
         <mesh key={x} position={[x, 0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
@@ -171,7 +176,7 @@ function Conveyor({ position, length, rotation = 0, slope = 0 }) {
       {[-0.56, 0.56].map((z) => (
         <mesh key={z} position={[0, 0.16, z]}>
           <boxGeometry args={[length, 0.1, 0.08]} />
-          <meshStandardMaterial color={colors.steel} metalness={0.4} roughness={0.4} />
+          <meshStandardMaterial color={colors.gold} metalness={0.25} roughness={0.46} />
         </mesh>
       ))}
       {[-length * 0.38, length * 0.38].flatMap((x) =>
@@ -538,19 +543,25 @@ function RoadNetwork() {
         <group key={site.id}>
           <mesh position={[4.4, 0, site.lane]} receiveShadow>
             <boxGeometry args={[19.8, 0.1, 2.75]} />
-            <meshStandardMaterial color="#68736e" roughness={0.98} />
+            <meshStandardMaterial color="#53615e" roughness={0.98} />
           </mesh>
           {Array.from({ length: 9 }, (_, index) => (
-            <mesh key={index} position={[-3.2 + index * 2.05, 0.065, site.lane]}>
-              <boxGeometry args={[0.9, 0.018, 0.055]} />
-              <meshBasicMaterial color="#d9d8c5" />
+            <mesh key={index} position={[-3.2 + index * 2.05, 0.075, site.lane]}>
+              <boxGeometry args={[1.05, 0.025, 0.11]} />
+              <meshBasicMaterial color="#f0d98c" />
+            </mesh>
+          ))}
+          {[-1.36, 1.36].map((offset) => (
+            <mesh key={offset} position={[4.4, 0.08, site.lane + offset]}>
+              <boxGeometry args={[19.8, 0.12, 0.12]} />
+              <meshStandardMaterial color="#d9ddd1" roughness={0.9} />
             </mesh>
           ))}
         </group>
       ))}
       <mesh position={[-1.8, -0.01, 0]} receiveShadow>
         <boxGeometry args={[3.2, 0.1, 18.75]} />
-        <meshStandardMaterial color="#68736e" roughness={0.98} />
+        <meshStandardMaterial color="#53615e" roughness={0.98} />
       </mesh>
       {customerSites.flatMap((site) =>
         [-0.72, -0.24, 0.24, 0.72].map((offset) => (

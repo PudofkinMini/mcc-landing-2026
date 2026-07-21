@@ -342,7 +342,12 @@ blockquote {
   z-index: 2;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(232, 234, 220, 0.92) 0%, transparent 39%),
+    linear-gradient(
+      90deg,
+      rgba(232, 234, 220, 0.99) 0%,
+      rgba(232, 234, 220, 0.92) 25%,
+      transparent 48%
+    ),
     radial-gradient(circle at 50% 50%, transparent 55%, rgba(19, 40, 43, 0.06) 100%);
   pointer-events: none;
   content: '';
