@@ -67,9 +67,9 @@ const processConveyorEnd = -7.52
 const loadingLanes = [2.4, 0, -2.4]
 // From this camera angle, negative Z is the top loading bay on screen.
 const linenTruckOrder = [2, 1, 0]
-const truckHeight = 0.82
+const truckHeight = 0.92
 const truckRearX = -6.02
-const customerSiteElevation = 0.2
+const customerSiteElevation = 0.6
 
 const loadingForkCurves = loadingLanes.map((z) => {
   const direction = Math.sign(z)
