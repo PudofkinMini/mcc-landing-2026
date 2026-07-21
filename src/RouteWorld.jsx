@@ -62,6 +62,8 @@ const processCurve = new THREE.CatmullRomCurve3(
   'centripetal',
 )
 
+const processConveyorStart = -25.35
+const processConveyorEnd = -7.52
 const loadingLanes = [2.4, 0, -2.4]
 // From this camera angle, negative Z is the top loading bay on screen.
 const linenTruckOrder = [2, 1, 0]
@@ -103,6 +105,7 @@ const customerSites = [
     stop: [8.4, truckHeight, 7.9],
     lane: 7.9,
     color: colors.coral,
+    roofY: 2.4,
   },
   {
     id: 'hotel',
@@ -110,6 +113,7 @@ const customerSites = [
     stop: [9.4, truckHeight, 0],
     lane: 0,
     color: colors.blue,
+    roofY: 6.9,
   },
   {
     id: 'hospital',
@@ -117,6 +121,7 @@ const customerSites = [
     stop: [8.7, truckHeight, -8.1],
     lane: -8.1,
     color: colors.green,
+    roofY: 5.1,
   },
 ]
 
@@ -706,7 +711,10 @@ function Plant({ scrollProgress }) {
       {[-22.8, -18.3, -13.8, -9.3].map((x) => (
         <Window key={x} position={[x, 2.65, -6.45]} size={[2.05, 0.92]} color="#6f9196" />
       ))}
-      <Conveyor position={[-15.91, 1, 0]} length={16.78} />
+      <Conveyor
+        position={[(processConveyorStart + processConveyorEnd) / 2, 1, 0]}
+        length={processConveyorEnd - processConveyorStart}
+      />
       {loadingForkCurves.map((curve, index) => (
         <CurvedConveyor key={loadingLanes[index]} curve={curve} />
       ))}
@@ -1030,9 +1038,9 @@ function Smiley({ position, scrollProgress, delay = 0 }) {
   const smiley = useRef()
   useFrame(() => {
     const appear = smooth(scrollProgress, 0.87 + delay, 0.94 + delay)
-    const bounce = Math.sin(appear * Math.PI) * 0.35
-    smiley.current.scale.setScalar(appear)
-    smiley.current.position.y = position[1] + bounce
+    const bounce = Math.sin(appear * Math.PI) * 0.4
+    smiley.current.scale.setScalar(appear * 2.1)
+    smiley.current.position.y = position[1] - 0.35 + appear * 2.25 + bounce
   })
 
   return (
@@ -1082,7 +1090,7 @@ function CustomerWorld({ scrollProgress }) {
       {customerSites.map((site, index) => (
         <Smiley
           key={site.id}
-          position={[site.stop[0] + 0.4, 2.25, site.stop[2] - 0.25]}
+          position={[site.position[0], site.roofY, site.position[2]]}
           scrollProgress={scrollProgress}
           delay={index * 0.012}
         />
