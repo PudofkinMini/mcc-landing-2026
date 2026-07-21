@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Billboard, Float, RoundedBox } from '@react-three/drei'
+import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 
 const MOBILE_BREAKPOINT = 800
@@ -12,8 +12,8 @@ const palette = {
   coral: '#f2563d',
   blue: '#3d88b8',
   gold: '#e9aa3c',
-  routeOut: '#00643c',
-  routeOutGlow: '#47d990',
+  routeOut: '#008a50',
+  routeOutGlow: '#28d486',
   routeBack: '#b93229',
   routeBackGlow: '#ff7463',
   cream: '#f4f0e4',
@@ -23,48 +23,68 @@ const palette = {
   roof: '#75877f',
 }
 
-const warehouseRows = [-7, 0, 7]
-const customerColumns = [
-  { type: 'hospital', x: -4 },
-  { type: 'restaurant', x: 4 },
-  { type: 'hotel', x: 12 },
+const warehouseSites = [
+  { position: [-17.4, -9.2], returnEdge: 'top' },
+  { position: [-14.6, -1.7], returnEdge: 'top' },
+  { position: [-18.2, 8.6], returnEdge: 'bottom' },
+]
+const customerSites = [
+  [
+    { type: 'hospital', position: [-7.7, -7.5] },
+    { type: 'restaurant', position: [2.2, -10.1] },
+    { type: 'hotel', position: [13.1, -7.1] },
+  ],
+  [
+    { type: 'hospital', position: [-4.5, 1.5] },
+    { type: 'restaurant', position: [5.3, -2.7] },
+    { type: 'hotel', position: [10.4, 3.1] },
+  ],
+  [
+    { type: 'hospital', position: [-8.3, 10.2] },
+    { type: 'restaurant', position: [1.1, 6.2] },
+    { type: 'hotel', position: [14.2, 9.6] },
+  ],
 ]
 const OUTBOUND_END = 0.48
 const RETURN_START = 0.56
 const RETURN_END = 0.96
 
-const routes = warehouseRows.flatMap((row, warehouseIndex) =>
-  customerColumns.map((customer, customerIndex) => {
-    const laneOffset = (customerIndex - 1) * 0.46
-    const returnLane = row + (customerIndex - 1) * 0.82
-    const destination = [customer.x, row]
+const routes = warehouseSites.flatMap((warehouse, warehouseIndex) =>
+  customerSites[warehouseIndex].map((customer, customerIndex) => {
+    const [warehouseX, warehouseZ] = warehouse.position
+    const [destinationX, destinationZ] = customer.position
+    const laneOffset = (customerIndex - 1) * 0.42
+    const start = [warehouseX, warehouseZ + laneOffset]
+    const deltaX = destinationX - warehouseX
+    const deltaZ = destinationZ - warehouseZ
+    const arc = [0.46, -0.58, 0.72][customerIndex] * (warehouseIndex === 1 ? -1 : 1)
+    const boundaryZ =
+      warehouse.returnEdge === 'top'
+        ? -11.8 - warehouseIndex * 0.7 - customerIndex * 0.32
+        : 11.85 + customerIndex * 0.35
+    const rightEdge = 20 + customerIndex * 0.32
+    const leftEdge = warehouseX - 2.4 - customerIndex * 0.28
 
     return {
       id: `${warehouseIndex}-${customer.type}`,
       warehouseIndex,
       customerIndex,
-      destination,
       outbound: [
-        [-14, row + laneOffset],
-        [-12.2, row + laneOffset],
-        [-10.3, row + (customerIndex - 1) * 1.2],
-        [-8.1, row - (customerIndex - 1) * 0.82],
-        [Math.min(customer.x - 4.2, -5.8), row + (customerIndex - 1) * 0.58],
-        [customer.x - 1.65, row],
-        destination,
+        start,
+        [warehouseX + deltaX * 0.3, warehouseZ + deltaZ * 0.3 + arc],
+        [warehouseX + deltaX * 0.7, warehouseZ + deltaZ * 0.7 + arc * 0.55],
+        customer.position,
       ],
       returning: [
-        destination,
-        [customer.x + 1.7, row],
-        [15.7, row + (warehouseIndex - 1) * 0.34],
-        [16.8, returnLane],
-        [16.8, returnLane + (customerIndex - 1) * 0.25],
-        [8.4, returnLane],
-        [0, returnLane + (warehouseIndex - 1) * 0.2],
-        [-8.5, returnLane],
-        [-16.7, returnLane],
-        [-16.7, row + laneOffset],
-        [-14, row + laneOffset],
+        customer.position,
+        [
+          destinationX + Math.min(3.2, (rightEdge - destinationX) * 0.3),
+          destinationZ + (boundaryZ - destinationZ) * 0.1,
+        ],
+        [rightEdge - 1.8, boundaryZ],
+        [leftEdge + 1.8, boundaryZ],
+        [leftEdge, warehouseZ + (boundaryZ - warehouseZ) * 0.38],
+        start,
       ],
       outboundProfile: (warehouseIndex * 2 + customerIndex) % 5,
       returnProfile: (warehouseIndex + customerIndex * 2 + 2) % 5,
@@ -82,10 +102,9 @@ const speedProfiles = [
 
 const toCurve = (points) =>
   new THREE.CatmullRomCurve3(
-    points.map(([x, z]) => new THREE.Vector3(x, 0.9, z)),
+    points.map(([x, z]) => new THREE.Vector3(x, 0.98, z)),
     false,
-    'catmullrom',
-    0.22,
+    'centripetal',
   )
 
 const routeCurves = routes.map((route) => ({
@@ -100,8 +119,8 @@ function phaseProgress(scrollProgress, start, end, profile) {
 
 function CameraRig({ scrollProgress }) {
   const { camera, pointer, size } = useThree()
-  const target = useRef(new THREE.Vector3(-14, 0.5, 0))
-  const focus = useRef(new THREE.Vector3(-14, 0.9, 0))
+  const target = useRef(new THREE.Vector3(-16, 0.5, 0))
+  const focus = useRef(new THREE.Vector3(-16, 0.9, 0))
 
   useEffect(() => {
     if (!camera.isPerspectiveCamera) return
@@ -138,10 +157,15 @@ function CameraRig({ scrollProgress }) {
     focus.current.lerp(desiredFocus, 1 - Math.exp(-delta * 3.6))
     const mobile = size.width <= MOBILE_BREAKPOINT
     const orbit = Math.sin(scrollProgress * Math.PI * 1.25)
+    const finishLift = THREE.MathUtils.smoothstep(scrollProgress, 0.84, 1)
+    const cameraAnchorX = THREE.MathUtils.lerp(focus.current.x, 0, finishLift)
+    const cameraAnchorZ = THREE.MathUtils.lerp(focus.current.z, 0, finishLift)
     const desiredPosition = new THREE.Vector3(
-      focus.current.x + (mobile ? 1.5 : 3.5) + orbit * 2.4,
-      mobile ? 27 : 22 + Math.sin(scrollProgress * Math.PI) * 2.2,
-      focus.current.z + (mobile ? 29 : 25) - orbit * 2,
+      cameraAnchorX + (mobile ? 1.5 : 3.5) + orbit * 2.4,
+      (mobile ? 30 : 25) +
+        Math.sin(scrollProgress * Math.PI) * 2.5 +
+        finishLift * (mobile ? 5 : 8),
+      cameraAnchorZ + (mobile ? 33 : 29) - orbit * 2.2 + finishLift * (mobile ? 6 : 9),
     )
     desiredPosition.x += pointer.x * 0.42
     desiredPosition.y += pointer.y * 0.2
@@ -150,9 +174,9 @@ function CameraRig({ scrollProgress }) {
     camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosition.z, 3.2, delta)
 
     const desiredTarget = new THREE.Vector3(
-      focus.current.x - (mobile ? 0 : 2.8),
+      THREE.MathUtils.lerp(focus.current.x - (mobile ? 0 : 2.8), mobile ? 0 : -1, finishLift),
       0.65,
-      focus.current.z,
+      THREE.MathUtils.lerp(focus.current.z, 0, finishLift),
     )
     target.current.x = THREE.MathUtils.damp(target.current.x, desiredTarget.x, 3.2, delta)
     target.current.y = THREE.MathUtils.damp(target.current.y, desiredTarget.y, 3.2, delta)
@@ -226,9 +250,8 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         <meshBasicMaterial
           color={palette.routeOutGlow}
           transparent
-          opacity={0.045}
+          opacity={0.12}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
         />
       </mesh>
       <mesh geometry={geometry.outbound.line} frustumCulled={false}>
@@ -487,56 +510,6 @@ function Hotel({ position }) {
   )
 }
 
-function SmileBadge({ position, color, delay, activeStage, size = 1 }) {
-  const group = useRef()
-  const smileCurve = useMemo(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.3, -0.05, 0.08),
-        new THREE.Vector3(0, -0.24, 0.08),
-        new THREE.Vector3(0.3, -0.05, 0.08),
-      ]),
-    [],
-  )
-  const smileGeometry = useMemo(() => new THREE.TubeGeometry(smileCurve, 18, 0.045, 8, false), [smileCurve])
-
-  useFrame((state, delta) => {
-    const visible = activeStage === 3
-    const elapsed = Math.max(0, state.clock.elapsedTime - delay)
-    const targetScale = visible ? size : 0
-    const nextScale = THREE.MathUtils.damp(group.current.scale.x, targetScale, visible ? 4 : 6, delta)
-    group.current.scale.setScalar(nextScale)
-    group.current.position.y = THREE.MathUtils.damp(
-      group.current.position.y,
-      visible ? position[1] + 1.15 + Math.sin(elapsed * 1.6) * 0.12 : position[1] - 0.25,
-      3.5,
-      delta,
-    )
-  })
-
-  return (
-    <group ref={group} position={[position[0], position[1] - 0.25, position[2]]} scale={0}>
-      <Float speed={2} floatIntensity={0.12} rotationIntensity={0.08}>
-        <Billboard>
-          <mesh castShadow>
-            <circleGeometry args={[0.66, 40]} />
-            <meshStandardMaterial color={color} roughness={0.5} side={THREE.DoubleSide} />
-          </mesh>
-          {[-0.22, 0.22].map((x) => (
-            <mesh key={x} position={[x, 0.16, 0.06]}>
-              <circleGeometry args={[0.07, 18]} />
-              <meshBasicMaterial color={palette.ink} />
-            </mesh>
-          ))}
-          <mesh geometry={smileGeometry}>
-            <meshBasicMaterial color={palette.ink} />
-          </mesh>
-        </Billboard>
-      </Float>
-    </group>
-  )
-}
-
 function Shrub({ position, color = palette.grass, scale = 1 }) {
   return (
     <group position={position} scale={scale}>
@@ -583,50 +556,57 @@ function CityBlock({ position, height = 1.5, color = '#d7d8cb' }) {
 
 function WorldDetails() {
   const shrubs = [
-    [-11.2, -10.2, 0.9],
-    [-6.8, -10.1, 1.1],
-    [2.2, -10.2, 0.8],
-    [10.1, -10.1, 1.05],
-    [-10.8, 10.2, 1.1],
-    [-2.1, 10.1, 0.85],
-    [6.4, 10.15, 1.05],
-    [14.3, 10.05, 0.9],
+    [-13.1, -12.2, 0.9],
+    [-5.1, -12.4, 1.1],
+    [5.8, -12.1, 0.8],
+    [16.7, -12, 1.05],
+    [-12.8, 12.4, 1.1],
+    [-3.3, 12.1, 0.85],
+    [7.2, 12.3, 1.05],
+    [17.3, 12.15, 0.9],
   ]
   const blocks = [
-    [-9, -3.55, 1.3, '#d8d9cc'],
-    [-9, 3.55, 1.8, '#d0d7d0'],
-    [0, -3.55, 1.7, '#ddd5ca'],
-    [0, 3.55, 1.25, '#d8d9cc'],
-    [8, -3.55, 1.35, '#d0d7d0'],
-    [8, 3.55, 1.85, '#ddd5ca'],
+    [-10.5, -3.8, 1.3, '#d8d9cc'],
+    [-11.2, 4.35, 1.8, '#d0d7d0'],
+    [-0.9, -4.8, 1.7, '#ddd5ca'],
+    [-0.4, 1.8, 1.25, '#d8d9cc'],
+    [7.3, -6.5, 1.35, '#d0d7d0'],
+    [7.1, 7.1, 1.85, '#ddd5ca'],
+    [16.8, -1.1, 1.5, '#d8d9cc'],
   ]
   const lampPositions = [
-    [-11.2, -4.8],
-    [-11.2, 4.8],
-    [-1.2, -4.8],
-    [-1.2, 4.8],
-    [6.8, -4.8],
-    [6.8, 4.8],
-    [14.7, -4.8],
-    [14.7, 4.8],
+    [-12.4, -5.7],
+    [-9.5, 6.5],
+    [-2.5, -7.2],
+    [1.8, 3.4],
+    [7.5, -4.4],
+    [9.1, 5.5],
+    [15.8, -5.2],
+    [17.2, 6.4],
   ]
+  const avenueRows = [-9.1, -1.35, 8.4]
 
   return (
     <>
-      {warehouseRows.map((z) => (
-        <mesh key={`road-${z}`} position={[0, 0.28, z]} receiveShadow>
-          <boxGeometry args={[37.5, 0.055, 2.55]} />
+      {avenueRows.map((z, index) => (
+        <mesh
+          key={`road-${z}`}
+          position={[0, 0.28, z]}
+          rotation={[0, index === 1 ? -0.025 : index === 2 ? 0.018 : 0, 0]}
+          receiveShadow
+        >
+          <boxGeometry args={[44.5, 0.055, 2.7]} />
           <meshStandardMaterial color="#aeb5aa" roughness={0.98} />
         </mesh>
       ))}
-      {[-9, 0, 8, 16].map((x) => (
+      {[-10.2, -1.4, 8.1, 17].map((x) => (
         <mesh key={`cross-${x}`} position={[x, 0.285, 0]} receiveShadow>
-          <boxGeometry args={[2.35, 0.06, 22.5]} />
+          <boxGeometry args={[2.4, 0.06, 27]} />
           <meshStandardMaterial color="#aeb5aa" roughness={0.98} />
         </mesh>
       ))}
-      {warehouseRows.flatMap((z) =>
-        [-9, 0, 8, 16].map((x) => (
+      {avenueRows.flatMap((z) =>
+        [-10.2, -1.4, 8.1, 17].map((x) => (
           <mesh key={`crosswalk-${x}-${z}`} position={[x, 0.32, z]}>
             <boxGeometry args={[0.08, 0.02, 1.6]} />
             <meshBasicMaterial color="#d9dcd2" transparent opacity={0.72} />
@@ -655,11 +635,11 @@ function WorldDetails() {
   )
 }
 
-export function RouteWorld({ activeStage, scrollProgress }) {
+export function RouteWorld({ scrollProgress }) {
   return (
     <>
       <color attach="background" args={['#e8eadc']} />
-      <fog attach="fog" args={['#e8eadc', 36, 62]} />
+      <fog attach="fog" args={['#e8eadc', 42, 72]} />
       <ambientLight intensity={0.85} />
       <hemisphereLight args={['#ffffff', '#9a9a82', 0.9]} />
       <directionalLight
@@ -667,19 +647,19 @@ export function RouteWorld({ activeStage, scrollProgress }) {
         position={[-6, 14, 9]}
         intensity={1.65}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-22}
-        shadow-camera-right={22}
-        shadow-camera-top={16}
-        shadow-camera-bottom={-16}
+        shadow-camera-left={-26}
+        shadow-camera-right={26}
+        shadow-camera-top={19}
+        shadow-camera-bottom={-19}
         shadow-bias={-0.0004}
       />
       <CameraRig scrollProgress={scrollProgress} />
 
       <group position={[0, -0.18, 0]}>
-        <RoundedBox args={[39, 0.42, 24]} radius={0.5} smoothness={5} position={[0, 0, 0]} receiveShadow>
+        <RoundedBox args={[46, 0.42, 29]} radius={0.55} smoothness={5} position={[0, 0, 0]} receiveShadow>
           <meshStandardMaterial color="#c2c8ba" roughness={0.94} />
         </RoundedBox>
-        <RoundedBox args={[38.3, 0.08, 23.3]} radius={0.4} smoothness={4} position={[0, 0.24, 0]} receiveShadow>
+        <RoundedBox args={[45.3, 0.08, 28.3]} radius={0.45} smoothness={4} position={[0, 0.24, 0]} receiveShadow>
           <meshStandardMaterial color="#b9c1b2" roughness={0.92} />
         </RoundedBox>
         <WorldDetails />
@@ -691,38 +671,25 @@ export function RouteWorld({ activeStage, scrollProgress }) {
             scrollProgress={scrollProgress}
           />
         ))}
-        {warehouseRows.map((z, index) => (
-          <Warehouse key={z} position={[-14, 0.31, z]} index={index} />
+        {warehouseSites.map((warehouse, index) => (
+          <Warehouse
+            key={`${warehouse.position[0]}-${warehouse.position[1]}`}
+            position={[warehouse.position[0], 0.31, warehouse.position[1]]}
+            index={index}
+          />
         ))}
-        {warehouseRows.flatMap((z) =>
-          customerColumns.map((customer) => {
+        {customerSites.flatMap((sites) =>
+          sites.map((customer) => {
             const Component =
               customer.type === 'hospital'
                 ? Hospital
                 : customer.type === 'restaurant'
                   ? Restaurant
                   : Hotel
-            return <Component key={`${customer.type}-${z}`} position={[customer.x, 0.31, z]} />
-          }),
-        )}
-        {warehouseRows.flatMap((z, rowIndex) =>
-          customerColumns.map((customer, customerIndex) => {
-            const badgeY =
-              customer.type === 'hospital' ? 3.05 : customer.type === 'restaurant' ? 2.75 : 4.55
-            const badgeColor =
-              customer.type === 'hospital'
-                ? palette.blue
-                : customer.type === 'restaurant'
-                  ? palette.coral
-                  : palette.gold
             return (
-              <SmileBadge
-                key={`badge-${customer.type}-${z}`}
-                position={[customer.x, badgeY, z]}
-                color={badgeColor}
-                delay={(rowIndex * 3 + customerIndex) * 0.06}
-                activeStage={activeStage}
-                size={0.58}
+              <Component
+                key={`${customer.type}-${customer.position[0]}-${customer.position[1]}`}
+                position={[customer.position[0], 0.31, customer.position[1]]}
               />
             )
           }),

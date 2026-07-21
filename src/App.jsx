@@ -14,19 +14,19 @@ const stages = [
     label: 'Deliver',
     eyebrow: '02 / Deliver',
     title: 'Every route, ready to respond.',
-    text: 'Coordinate every route from every plant, giving teams the right customer information in the moment as service changes.',
+    text: 'Give route teams the right customer information in the moment—and keep the plant and office in step as service changes.',
   },
   {
     label: 'Reconcile',
     eyebrow: '03 / Reconcile',
     title: 'Complexity, handled.',
-    text: 'As each route passes through healthcare, hospitality, and food service, every count, signature, and exception stays connected.',
+    text: 'From soil counts and cart loads to signatures and invoicing, the hard work happens once. The routine work simply happens.',
   },
   {
     label: 'Decide',
     eyebrow: '04 / Decide',
     title: 'See today. Shape tomorrow.',
-    text: 'Close every loop back at the plant, then turn live route activity and operating history into clearer decisions.',
+    text: 'Turn live route activity and long-term operating history into clearer decisions for every level of your business.',
   },
 ]
 
@@ -280,7 +280,7 @@ function HomeHero() {
             camera={{ position: [-9, 9, 12], fov: 35 }}
           >
             <Suspense fallback={null}>
-              <RouteWorld activeStage={activeStage} scrollProgress={scrollProgress} />
+              <RouteWorld scrollProgress={scrollProgress} />
               <Environment preset="city" environmentIntensity={0.22} />
             </Suspense>
           </Canvas>
@@ -301,8 +301,8 @@ function HomeHero() {
         </div>
 
         <div className="hero-proof">
-          <strong>09</strong>
-          <span>live routes moving as one operation</span>
+          <strong>15+</strong>
+          <span>years in field-service software</span>
         </div>
       </div>
       <Loader
