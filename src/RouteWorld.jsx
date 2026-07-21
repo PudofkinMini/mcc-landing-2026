@@ -230,11 +230,9 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         />
       </mesh>
       <mesh geometry={geometry.outbound.line} frustumCulled={false}>
-        <meshStandardMaterial
+        <meshBasicMaterial
           color={palette.routeOut}
-          emissive={palette.routeOut}
-          emissiveIntensity={0.2}
-          roughness={0.38}
+          toneMapped={false}
         />
       </mesh>
       <mesh geometry={geometry.returning.glow} frustumCulled={false}>
@@ -247,11 +245,9 @@ function RouteLine({ route, routeIndex, scrollProgress }) {
         />
       </mesh>
       <mesh geometry={geometry.returning.line} frustumCulled={false}>
-        <meshStandardMaterial
+        <meshBasicMaterial
           color={palette.routeBack}
-          emissive={palette.routeBack}
-          emissiveIntensity={0.2}
-          roughness={0.4}
+          toneMapped={false}
         />
       </mesh>
       <mesh ref={outboundMarker} visible={false}>
