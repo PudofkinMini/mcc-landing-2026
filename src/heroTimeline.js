@@ -1,14 +1,14 @@
 export const LINEN_TIMELINE = {
-  end: 0.39,
+  end: 0.47,
   initialMiddleProgress: 0.03,
   spacing: 0.03,
   processEnd: 0.78,
 }
 
 export const TRUCK_TIMELINE = {
-  middleDeparture: 0.37,
-  departureSpacing: 0.03,
-  driveEnd: 0.9,
+  middleDeparture: 0.48,
+  departureSpacing: 0.035,
+  driveEnd: 0.92,
 }
 
 const middleLoadingStart =
@@ -19,7 +19,7 @@ export const HERO_STAGE_STARTS = [
   0,
   middleLoadingStart,
   TRUCK_TIMELINE.middleDeparture,
-  0.88,
+  0.91,
 ]
 
 export const HERO_TIMELINE_END = 1

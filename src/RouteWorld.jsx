@@ -8,22 +8,31 @@ const MOBILE_BREAKPOINT = 800
 const DESKTOP_FOV = 34
 
 const colors = {
-  ink: '#153235',
-  darkInk: '#0d2528',
-  cream: '#f2eee2',
-  paper: '#e8eadc',
-  coral: '#f2563d',
-  blue: '#397fa9',
-  paleBlue: '#b8d3d6',
-  gold: '#e5a83d',
-  green: '#16865c',
-  grass: '#9caf7b',
-  concrete: '#c9cec1',
-  steel: '#8c9a94',
-  window: '#31555c',
+  ink: '#34383a',
+  darkInk: '#232628',
+  cream: '#ededeb',
+  paper: '#dcdddb',
+  coral: '#707578',
+  blue: '#898e91',
+  paleBlue: '#c8cac9',
+  gold: '#a9adae',
+  green: '#656a6c',
+  grass: '#969a98',
+  concrete: '#c4c6c5',
+  steel: '#7d8284',
+  window: '#565c60',
+  signalRed: '#c73d36',
+  white: '#f5f5f3',
 }
 
+const pizzaSliceShape = new THREE.Shape()
+pizzaSliceShape.moveTo(-0.34, -0.3)
+pizzaSliceShape.lineTo(0.34, -0.3)
+pizzaSliceShape.lineTo(0, 0.4)
+pizzaSliceShape.closePath()
+
 const smooth = (value, start, end) => THREE.MathUtils.smoothstep(value, start, end)
+const smoother = (value, start, end) => THREE.MathUtils.smootherstep(value, start, end)
 
 const middleLinenProgress = (scrollProgress) =>
   LINEN_TIMELINE.initialMiddleProgress +
@@ -41,10 +50,10 @@ const truckProgress = (scrollProgress, index) => {
   const departure =
     TRUCK_TIMELINE.middleDeparture +
     (loadingSequence - 1) * TRUCK_TIMELINE.departureSpacing
-  return smooth(
+  return smoother(
     scrollProgress,
     departure,
-    TRUCK_TIMELINE.driveEnd + (loadingSequence - 1) * 0.018,
+    TRUCK_TIMELINE.driveEnd + (loadingSequence - 1) * 0.012,
   )
 }
 
@@ -69,7 +78,9 @@ const loadingLanes = [2.4, 0, -2.4]
 const linenTruckOrder = [2, 1, 0]
 const truckHeight = 0.92
 const truckRearX = -6.02
-const customerSiteElevation = 0.6
+const roadDeckY = 0.36
+const roadDeckHeight = 0.1
+const customerBaseY = roadDeckY + roadDeckHeight / 2 + 0.01
 
 const loadingForkCurves = loadingLanes.map((z) => {
   const direction = Math.sign(z)
@@ -102,27 +113,27 @@ const loadingTransferCurves = loadingLanes.map((z) =>
 const customerSites = [
   {
     id: 'restaurant',
-    position: [11.5, 0.3 + customerSiteElevation, 7.9],
+    position: [11.5, customerBaseY, 7.9],
     stop: [8.4, truckHeight, 7.9],
     lane: 7.9,
     color: colors.coral,
-    roofY: 2.4 + customerSiteElevation,
+    roofY: customerBaseY + 2.1,
   },
   {
     id: 'hotel',
-    position: [12.7, 0.3 + customerSiteElevation, 0],
+    position: [12.7, customerBaseY, 0],
     stop: [9.4, truckHeight, 0],
     lane: 0,
     color: colors.blue,
-    roofY: 6.9 + customerSiteElevation,
+    roofY: customerBaseY + 7.12,
   },
   {
     id: 'hospital',
-    position: [12.5, 0.3 + customerSiteElevation, -8.1],
+    position: [12.5, customerBaseY, -8.1],
     stop: [8.7, truckHeight, -8.1],
     lane: -8.1,
     color: colors.green,
-    roofY: 5.1 + customerSiteElevation,
+    roofY: customerBaseY + 5.48,
   },
 ]
 
@@ -180,10 +191,10 @@ function CameraRig({ scrollProgress }) {
     )
     truckFocus.divideScalar(truckCurves.length)
 
-    const followBlend = smooth(scrollProgress, 0.29, 0.43)
+    const followBlend = smooth(scrollProgress, 0.34, 0.53)
     desiredTarget.lerpVectors(processPoint, truckFocus, followBlend)
 
-    const reveal = smooth(scrollProgress, 0.5, 0.69)
+    const reveal = smooth(scrollProgress, 0.58, 0.82)
     desiredTarget.lerp(new THREE.Vector3(-5.2, 0.65, 0), reveal)
     if (mobile && camera.isPerspectiveCamera) {
       const nextFov = THREE.MathUtils.lerp(74, 92, reveal)
@@ -198,7 +209,7 @@ function CameraRig({ scrollProgress }) {
       ? new THREE.Vector3(-7, 34, 42)
       : new THREE.Vector3(-8, 30, 38)
     desiredPosition.copy(desiredTarget).add(closeOffset.lerp(wideOffset, reveal))
-    const loadingAngle = smooth(scrollProgress, 0.24, 0.42) * (1 - reveal)
+    const loadingAngle = smooth(scrollProgress, 0.3, 0.52) * (1 - reveal)
     desiredPosition.x -= loadingAngle * (mobile ? 1.1 : 1.8)
     desiredPosition.y -= loadingAngle * (mobile ? 1.7 : 3)
     desiredPosition.z += loadingAngle * (mobile ? 0.9 : 1.6)
@@ -225,7 +236,7 @@ function Window({ position, rotation = [0, 0, 0], size = [0.56, 0.52], color = c
       </RoundedBox>
       <mesh position={[0, 0, 0.04]}>
         <boxGeometry args={[0.025, size[1] * 0.86, 0.01]} />
-        <meshBasicMaterial color="#b8d2d0" />
+        <meshBasicMaterial color={colors.paleBlue} />
       </mesh>
     </group>
   )
@@ -254,7 +265,7 @@ function Conveyor({
         <group key={x} position={[x, 0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <mesh>
             <cylinderGeometry args={[0.06, 0.06, width - 0.14, 10]} />
-            <meshStandardMaterial color="#b9c1bb" metalness={0.65} roughness={0.28} />
+            <meshStandardMaterial color={colors.concrete} metalness={0.65} roughness={0.28} />
           </mesh>
         </group>
       ))}
@@ -403,7 +414,7 @@ function CurvedConveyor({ curve, width = 0.86 }) {
       {rollers.map(({ position, quaternion }, index) => (
         <mesh key={index} position={position} quaternion={quaternion}>
           <cylinderGeometry args={[0.045, 0.045, width - 0.14, 10]} />
-          <meshStandardMaterial color="#b9c1bb" metalness={0.65} roughness={0.28} />
+          <meshStandardMaterial color={colors.concrete} metalness={0.65} roughness={0.28} />
         </mesh>
       ))}
     </group>
@@ -474,9 +485,9 @@ function LinenLoads({ scrollProgress }) {
         const site = customerSites[truckIndex]
         const linenColor =
           site.id === 'restaurant'
-            ? '#f2c2aa'
+            ? colors.concrete
             : site.id === 'hospital'
-              ? '#b7d5c3'
+              ? colors.gold
               : colors.paleBlue
 
         return (
@@ -506,12 +517,12 @@ function TunnelWasher() {
       <group rotation={[0, 0, Math.PI / 2]}>
         <mesh castShadow receiveShadow>
           <cylinderGeometry args={[1.72, 1.72, 3.8, 48, 1, true]} />
-          <meshStandardMaterial color="#dce2da" metalness={0.16} roughness={0.55} side={THREE.DoubleSide} />
+          <meshStandardMaterial color="#d7d9d8" metalness={0.16} roughness={0.55} side={THREE.DoubleSide} />
         </mesh>
         <mesh ref={drum}>
           <cylinderGeometry args={[1.35, 1.35, 3.88, 36, 1, true]} />
           <meshStandardMaterial
-            color="#5f7476"
+            color="#686d70"
             metalness={0.55}
             roughness={0.32}
             side={THREE.DoubleSide}
@@ -556,7 +567,7 @@ function IndustrialDryer() {
   return (
     <group position={[-14.75, 0.3, 0]}>
       <RoundedBox args={[2.9, 2.35, 3.1]} radius={0.22} smoothness={4} position={[0, 2.48, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#d9ddd5" roughness={0.6} metalness={0.16} />
+        <meshStandardMaterial color="#d4d6d5" roughness={0.6} metalness={0.16} />
       </RoundedBox>
       <mesh position={[0, 2.48, 1.59]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.88, 0.88, 0.16, 40]} />
@@ -564,7 +575,7 @@ function IndustrialDryer() {
       </mesh>
       <mesh position={[0, 2.48, 1.69]}>
         <circleGeometry args={[0.66, 36]} />
-        <meshStandardMaterial color="#789096" metalness={0.2} roughness={0.24} transparent opacity={0.74} />
+        <meshStandardMaterial color="#7d8285" metalness={0.2} roughness={0.24} transparent opacity={0.74} />
       </mesh>
       <mesh position={[0, 2.48, 1.705]}>
         <torusGeometry args={[0.75, 0.09, 12, 36]} />
@@ -616,7 +627,7 @@ function LinenFolder() {
         </RoundedBox>
       ))}
       <RoundedBox args={[3.1, 0.62, 3]} radius={0.18} smoothness={4} position={[0, 2.75, 0]} castShadow>
-        <meshStandardMaterial color="#d9e1dc" roughness={0.58} metalness={0.14} />
+        <meshStandardMaterial color="#d3d5d4" roughness={0.58} metalness={0.14} />
       </RoundedBox>
       <mesh position={[0, 3.07, 0]}>
         <boxGeometry args={[2.25, 0.06, 2.2]} />
@@ -695,7 +706,7 @@ function Plant({ scrollProgress }) {
   return (
     <group>
       <RoundedBox args={[23.2, 0.4, 14.2]} radius={0.35} smoothness={4} position={[-14.6, 0, 0]} receiveShadow>
-        <meshStandardMaterial color="#bcc3b7" roughness={0.96} />
+        <meshStandardMaterial color="#b9bcba" roughness={0.96} />
       </RoundedBox>
       <mesh position={[-14.6, 0.25, -6.75]} receiveShadow>
         <boxGeometry args={[22.7, 0.08, 0.2]} />
@@ -707,10 +718,10 @@ function Plant({ scrollProgress }) {
       </mesh>
       <mesh position={[-14.45, 2.1, -6.6]} castShadow receiveShadow>
         <boxGeometry args={[22.7, 4.2, 0.26]} />
-        <meshStandardMaterial color="#e4e3d8" roughness={0.84} />
+        <meshStandardMaterial color="#dedfdd" roughness={0.84} />
       </mesh>
       {[-22.8, -18.3, -13.8, -9.3].map((x) => (
-        <Window key={x} position={[x, 2.65, -6.45]} size={[2.05, 0.92]} color="#6f9196" />
+        <Window key={x} position={[x, 2.65, -6.45]} size={[2.05, 0.92]} color="#73787b" />
       ))}
       <Conveyor
         position={[(processConveyorStart + processConveyorEnd) / 2, 1, 0]}
@@ -770,7 +781,7 @@ function TruckModel({ accent }) {
       </RoundedBox>
       <mesh position={[1.36, 0.96, 0]} rotation={[0, Math.PI / 2, 0]}>
         <RoundedBox args={[0.74, 0.42, 0.06]} radius={0.06} smoothness={3}>
-          <meshStandardMaterial color="#315963" metalness={0.12} roughness={0.2} />
+          <meshStandardMaterial color={colors.window} metalness={0.12} roughness={0.2} />
         </RoundedBox>
       </mesh>
       <mesh position={[-0.56, 0.93, 0.616]}>
@@ -786,18 +797,18 @@ function TruckModel({ accent }) {
           <group key={`${x}-${z}`} position={[x, 0.52, z]}>
             <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
               <cylinderGeometry args={[0.37, 0.37, 0.42, 24]} />
-              <meshStandardMaterial color="#172426" roughness={0.84} />
+              <meshStandardMaterial color={colors.darkInk} roughness={0.84} />
             </mesh>
             <mesh position={[0, 0, Math.sign(z) * 0.225]}>
               <torusGeometry args={[0.28, 0.085, 10, 24]} />
-              <meshStandardMaterial color="#202e30" roughness={0.88} />
+              <meshStandardMaterial color="#2d3032" roughness={0.88} />
             </mesh>
             <mesh
               position={[0, 0, Math.sign(z) * 0.24]}
               rotation={[Math.PI / 2, 0, 0]}
             >
               <cylinderGeometry args={[0.12, 0.12, 0.055, 18]} />
-              <meshStandardMaterial color="#aab5ae" metalness={0.68} roughness={0.3} />
+              <meshStandardMaterial color="#aeb1af" metalness={0.68} roughness={0.3} />
             </mesh>
           </group>
         )),
@@ -805,7 +816,7 @@ function TruckModel({ accent }) {
       {[-0.34, 0.34].map((z) => (
         <mesh key={z} position={[1.515, 0.72, z]} rotation={[0, Math.PI / 2, 0]}>
           <circleGeometry args={[0.09, 16]} />
-          <meshStandardMaterial color="#fff2b6" emissive="#ffe58a" emissiveIntensity={0.7} />
+          <meshStandardMaterial color={colors.white} emissive={colors.white} emissiveIntensity={0.45} />
         </mesh>
       ))}
     </group>
@@ -836,36 +847,36 @@ function MovingTruck({ index, scrollProgress }) {
 
 function RoadNetwork() {
   return (
-    <group position={[0, 0.36, 0]}>
+    <group position={[0, roadDeckY, 0]}>
       {customerSites.map((site) => (
         <group key={site.id}>
           <mesh position={[4.4, 0, site.lane]} receiveShadow>
             <boxGeometry args={[19.8, 0.1, 2.75]} />
-            <meshStandardMaterial color="#53615e" roughness={0.98} />
+            <meshStandardMaterial color="#555a5c" roughness={0.98} />
           </mesh>
           {Array.from({ length: 9 }, (_, index) => (
             <mesh key={index} position={[-3.2 + index * 2.05, 0.075, site.lane]}>
               <boxGeometry args={[1.05, 0.025, 0.11]} />
-              <meshBasicMaterial color="#f0d98c" />
+              <meshBasicMaterial color="#c9cbca" />
             </mesh>
           ))}
           {[-1.36, 1.36].map((offset) => (
             <mesh key={offset} position={[4.4, 0.08, site.lane + offset]}>
               <boxGeometry args={[19.8, 0.12, 0.12]} />
-              <meshStandardMaterial color="#d9ddd1" roughness={0.9} />
+              <meshStandardMaterial color="#d2d4d3" roughness={0.9} />
             </mesh>
           ))}
         </group>
       ))}
       <mesh position={[-1.8, -0.01, 0]} receiveShadow>
         <boxGeometry args={[3.2, 0.1, 18.75]} />
-        <meshStandardMaterial color="#53615e" roughness={0.98} />
+        <meshStandardMaterial color="#555a5c" roughness={0.98} />
       </mesh>
       {customerSites.flatMap((site) =>
         [-0.72, -0.24, 0.24, 0.72].map((offset) => (
           <mesh key={`${site.id}-${offset}`} position={[9.8 + offset, 0.07, site.lane]}>
             <boxGeometry args={[0.22, 0.02, 1.8]} />
-            <meshBasicMaterial color="#ecebdc" />
+            <meshBasicMaterial color="#e1e2e0" />
           </mesh>
         )),
       )}
@@ -877,7 +888,7 @@ function Restaurant({ position }) {
   return (
     <group position={position}>
       <RoundedBox args={[4.1, 2.1, 4.3]} radius={0.22} smoothness={4} position={[0, 1.05, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#efdcb9" roughness={0.82} />
+        <meshStandardMaterial color="#c7c9c8" roughness={0.82} />
       </RoundedBox>
       <RoundedBox args={[1.25, 1.35, 2.7]} radius={0.14} smoothness={3} position={[-2.15, 0.68, 0]} castShadow>
         <meshStandardMaterial color={colors.cream} />
@@ -894,18 +905,6 @@ function Restaurant({ position }) {
       ))}
       <Window position={[-2.21, 0.78, -0.84]} rotation={[0, -Math.PI / 2, 0]} size={[0.75, 0.8]} />
       <Window position={[-2.21, 0.78, 0.84]} rotation={[0, -Math.PI / 2, 0]} size={[0.75, 0.8]} />
-      <mesh position={[-1.1, 2.76, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.16, 1.35, 12]} />
-        <meshStandardMaterial color={colors.ink} />
-      </mesh>
-      <mesh position={[-1.1, 3.35, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[0.48, 0.11, 12, 24]} />
-        <meshStandardMaterial color={colors.gold} />
-      </mesh>
-      <mesh position={[-1.1, 3.35, 0]}>
-        <circleGeometry args={[0.31, 24]} />
-        <meshStandardMaterial color={colors.coral} />
-      </mesh>
       {[-1.35, 1.35].map((z) => (
         <group key={z} position={[-3.25, 0, z]}>
           <mesh position={[0, 0.53, 0]} castShadow>
@@ -926,7 +925,7 @@ function Hotel({ position }) {
   return (
     <group position={position}>
       <RoundedBox args={[4.4, 6.6, 4.6]} radius={0.25} smoothness={4} position={[0, 3.3, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#d8d3c9" roughness={0.82} />
+        <meshStandardMaterial color="#c5c7c6" roughness={0.82} />
       </RoundedBox>
       <RoundedBox args={[1.1, 2, 2.6]} radius={0.15} smoothness={3} position={[-2.3, 1, 0]} castShadow>
         <meshStandardMaterial color={colors.cream} />
@@ -972,14 +971,14 @@ function Hospital({ position }) {
   return (
     <group position={position}>
       <RoundedBox args={[5.7, 4.8, 7.2]} radius={0.26} smoothness={4} position={[0, 2.4, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#dce5e1" roughness={0.78} />
+        <meshStandardMaterial color="#d0d2d1" roughness={0.78} />
       </RoundedBox>
       <RoundedBox args={[1.3, 2.4, 4.2]} radius={0.16} smoothness={3} position={[-3.05, 1.2, 0]} castShadow>
         <meshStandardMaterial color={colors.cream} />
       </RoundedBox>
       {[1.25, 2.35, 3.45].flatMap((y) =>
         [-2.5, -1.25, 0, 1.25, 2.5].map((z) => (
-          <Window key={`${y}-${z}`} position={[-2.87, y, z]} rotation={[0, -Math.PI / 2, 0]} size={[0.6, 0.55]} color="#38616a" />
+          <Window key={`${y}-${z}`} position={[-2.87, y, z]} rotation={[0, -Math.PI / 2, 0]} size={[0.6, 0.55]} color="#5c6265" />
         )),
       )}
       <mesh position={[-3.74, 3.65, 0]} rotation={[0, -Math.PI / 2, 0]}>
@@ -988,11 +987,11 @@ function Hospital({ position }) {
       </mesh>
       <mesh position={[-3.84, 3.65, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[0.25, 0.88, 0.06]} />
-        <meshStandardMaterial color={colors.coral} />
+        <meshStandardMaterial color={colors.signalRed} />
       </mesh>
       <mesh position={[-3.84, 3.65, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[0.88, 0.25, 0.06]} />
-        <meshStandardMaterial color={colors.coral} />
+        <meshStandardMaterial color={colors.signalRed} />
       </mesh>
       <mesh position={[-3.72, 1.72, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[4.3, 0.22, 0.12]} />
@@ -1021,7 +1020,7 @@ function Tree({ position, scale = 1 }) {
     <group position={position} scale={scale}>
       <mesh position={[0, 0.58, 0]} castShadow>
         <cylinderGeometry args={[0.11, 0.15, 1.15, 9]} />
-        <meshStandardMaterial color="#685f45" />
+        <meshStandardMaterial color="#626564" />
       </mesh>
       <mesh position={[0, 1.35, 0]} castShadow>
         <dodecahedronGeometry args={[0.72, 1]} />
@@ -1029,44 +1028,80 @@ function Tree({ position, scale = 1 }) {
       </mesh>
       <mesh position={[-0.34, 1.2, 0.16]} castShadow>
         <dodecahedronGeometry args={[0.46, 1]} />
-        <meshStandardMaterial color="#86a36f" roughness={0.95} />
+        <meshStandardMaterial color="#878b89" roughness={0.95} />
       </mesh>
     </group>
   )
 }
 
-function Smiley({ position, scrollProgress, delay = 0 }) {
-  const smiley = useRef()
-  useFrame(() => {
-    const appear = smooth(scrollProgress, 0.87 + delay, 0.94 + delay)
-    const bounce = Math.sin(appear * Math.PI) * 0.4
-    smiley.current.scale.setScalar(appear * 2.1)
-    smiley.current.position.y = position[1] - 0.35 + appear * 2.25 + bounce
-  })
+function SignIcon({ type }) {
+  if (type === 'hospital') {
+    return (
+      <group position={[0, 0, 0.1]}>
+        <mesh>
+          <boxGeometry args={[0.22, 0.78, 0.04]} />
+          <meshBasicMaterial color={colors.signalRed} />
+        </mesh>
+        <mesh>
+          <boxGeometry args={[0.78, 0.22, 0.04]} />
+          <meshBasicMaterial color={colors.signalRed} />
+        </mesh>
+      </group>
+    )
+  }
+
+  if (type === 'hotel') {
+    return (
+      <group position={[0, -0.04, 0.1]}>
+        <RoundedBox args={[0.78, 0.3, 0.04]} radius={0.07} smoothness={3}>
+          <meshBasicMaterial color={colors.white} />
+        </RoundedBox>
+        <mesh position={[-0.37, 0.14, 0]}>
+          <boxGeometry args={[0.12, 0.58, 0.04]} />
+          <meshBasicMaterial color={colors.white} />
+        </mesh>
+        <RoundedBox args={[0.22, 0.12, 0.025]} radius={0.04} smoothness={3} position={[-0.2, 0.04, 0.035]}>
+          <meshBasicMaterial color={colors.white} />
+        </RoundedBox>
+      </group>
+    )
+  }
 
   return (
-    <group ref={smiley} position={position} scale={0}>
-      <Billboard>
-        <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.72, 0.72, 0.18, 36]} />
-          <meshStandardMaterial color="#ffd35a" roughness={0.5} />
-        </mesh>
-        {[-0.25, 0.25].map((x) => (
-          <mesh key={x} position={[x, 0.2, 0.13]}>
-            <sphereGeometry args={[0.075, 14, 14]} />
-            <meshBasicMaterial color={colors.ink} />
-          </mesh>
-        ))}
-        <mesh position={[0, -0.04, 0.13]} rotation={[0, 0, Math.PI]}>
-          <torusGeometry args={[0.33, 0.055, 10, 24, Math.PI]} />
-          <meshBasicMaterial color={colors.ink} />
-        </mesh>
+    <group position={[0, 0, 0.1]}>
+      <mesh>
+        <shapeGeometry args={[pizzaSliceShape]} />
+        <meshBasicMaterial color={colors.white} />
+      </mesh>
+      <mesh position={[0, -0.27, 0.03]}>
+        <boxGeometry args={[0.72, 0.11, 0.04]} />
+        <meshBasicMaterial color={colors.white} />
+      </mesh>
+    </group>
+  )
+}
+
+function CustomerSign({ site }) {
+  const { size } = useThree()
+  const signScale = size.width <= MOBILE_BREAKPOINT ? 1.65 : 1.15
+
+  return (
+    <group position={[site.position[0], site.roofY, site.position[2]]} scale={signScale}>
+      <mesh position={[0, 0.72, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.09, 1.44, 12]} />
+        <meshStandardMaterial color={colors.steel} metalness={0.18} roughness={0.62} />
+      </mesh>
+      <Billboard position={[0, 1.62, 0]}>
+        <RoundedBox args={[1.65, 1.18, 0.14]} radius={0.14} smoothness={4} castShadow>
+          <meshStandardMaterial color={colors.darkInk} roughness={0.72} />
+        </RoundedBox>
+        <SignIcon type={site.id} />
       </Billboard>
     </group>
   )
 }
 
-function CustomerWorld({ scrollProgress }) {
+function CustomerWorld() {
   const treePositions = [
     [7.8, -11.6, 0.85],
     [10.2, -12, 1],
@@ -1088,12 +1123,10 @@ function CustomerWorld({ scrollProgress }) {
       {treePositions.map(([x, z, scale]) => (
         <Tree key={`${x}-${z}`} position={[x, 0.3, z]} scale={scale} />
       ))}
-      {customerSites.map((site, index) => (
-        <Smiley
+      {customerSites.map((site) => (
+        <CustomerSign
           key={site.id}
-          position={[site.position[0], site.roofY, site.position[2]]}
-          scrollProgress={scrollProgress}
-          delay={index * 0.012}
+          site={site}
         />
       ))}
     </>
@@ -1106,7 +1139,7 @@ export function RouteWorld({ scrollProgress }) {
       <color attach="background" args={[colors.paper]} />
       <fog attach="fog" args={[colors.paper, 44, 74]} />
       <ambientLight intensity={0.7} />
-      <hemisphereLight args={['#ffffff', '#839174', 1.05]} />
+      <hemisphereLight args={[colors.white, '#8a8e8c', 1.05]} />
       <directionalLight
         castShadow
         position={[-8, 18, 12]}
@@ -1122,13 +1155,13 @@ export function RouteWorld({ scrollProgress }) {
 
       <group position={[0, -0.22, 0]}>
         <RoundedBox args={[51, 0.42, 29]} radius={0.6} smoothness={5} position={[-3.4, 0, 0]} receiveShadow>
-          <meshStandardMaterial color="#bdc5b5" roughness={0.96} />
+          <meshStandardMaterial color="#b8bbb9" roughness={0.96} />
         </RoundedBox>
         <RoundedBox args={[50.3, 0.08, 28.3]} radius={0.5} smoothness={4} position={[-3.4, 0.24, 0]} receiveShadow>
-          <meshStandardMaterial color="#b3beaa" roughness={0.95} />
+          <meshStandardMaterial color="#afb2b0" roughness={0.95} />
         </RoundedBox>
         <Plant scrollProgress={scrollProgress} />
-        <CustomerWorld scrollProgress={scrollProgress} />
+        <CustomerWorld />
         {customerSites.map((site, index) => (
           <MovingTruck key={site.id} index={index} scrollProgress={scrollProgress} />
         ))}
