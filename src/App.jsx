@@ -7,8 +7,29 @@ import { HERO_STAGE_STARTS, HERO_TIMELINE_END } from './heroTimeline'
 
 const HERO_SNAP_POINTS = [...HERO_STAGE_STARTS, HERO_TIMELINE_END]
 const HERO_SNAP_EPSILON = 0.006
-const HERO_SNAP_DURATION = 0.8
+const HERO_STAGE_SNAP_DURATIONS = [0.8, 0.65, 1.45, 1]
+const HERO_MIN_SNAP_DURATION = 0.35
+const HERO_MAX_SNAP_DURATION = 1.6
 const HERO_SNAP_EASING = (time) => 1 - Math.pow(1 - time, 3)
+const getHeroSnapDuration = (fromProgress, toProgress) => {
+  const rangeStart = Math.min(fromProgress, toProgress)
+  const rangeEnd = Math.max(fromProgress, toProgress)
+  const duration = HERO_STAGE_SNAP_DURATIONS.reduce(
+    (total, stageDuration, index) => {
+      const stageStart = HERO_SNAP_POINTS[index]
+      const stageEnd = HERO_SNAP_POINTS[index + 1]
+      const overlap =
+        Math.max(0, Math.min(rangeEnd, stageEnd) - Math.max(rangeStart, stageStart))
+      return total + stageDuration * (overlap / (stageEnd - stageStart))
+    },
+    0,
+  )
+
+  return Math.min(
+    HERO_MAX_SNAP_DURATION,
+    Math.max(HERO_MIN_SNAP_DURATION, duration),
+  )
+}
 const getViewportHeight = () =>
   window.visualViewport?.height ?? window.innerHeight
 
@@ -278,11 +299,18 @@ function HomeHero() {
       }
     }
 
-    const scrollToSnapPoint = (lenis, metrics, targetIndex, direction) => {
+    const scrollToSnapPoint = (
+      lenis,
+      metrics,
+      currentProgress,
+      targetIndex,
+      direction,
+    ) => {
       snapTargetIndex = targetIndex
       snapDirection = direction
-      lenis.scrollTo(metrics.top + HERO_SNAP_POINTS[targetIndex] * metrics.distance, {
-        duration: HERO_SNAP_DURATION,
+      const targetProgress = HERO_SNAP_POINTS[targetIndex]
+      lenis.scrollTo(metrics.top + targetProgress * metrics.distance, {
+        duration: getHeroSnapDuration(currentProgress, targetProgress),
         easing: HERO_SNAP_EASING,
         userData: { heroSnap: true },
         onComplete: () => {
@@ -307,7 +335,13 @@ function HomeHero() {
         if (direction !== snapDirection) {
           const reversedTarget = snapTargetIndex + direction
           if (reversedTarget >= 0 && reversedTarget < HERO_SNAP_POINTS.length) {
-            scrollToSnapPoint(lenis, hero.metrics, reversedTarget, direction)
+            scrollToSnapPoint(
+              lenis,
+              hero.metrics,
+              hero.progress,
+              reversedTarget,
+              direction,
+            )
           }
         }
         return false
@@ -324,7 +358,13 @@ function HomeHero() {
 
       if (targetIndex === -1) return
       event.preventDefault()
-      scrollToSnapPoint(lenis, hero.metrics, targetIndex, direction)
+      scrollToSnapPoint(
+        lenis,
+        hero.metrics,
+        hero.progress,
+        targetIndex,
+        direction,
+      )
       return false
     }
 
@@ -366,8 +406,14 @@ function HomeHero() {
     const distance = rect.height - getViewportHeight()
     const top = trackTop + HERO_STAGE_STARTS[index] * distance
     if (lenisRef.current) {
+      const currentProgress = clampProgress(
+        (lenisRef.current.animatedScroll - trackTop) / distance,
+      )
       lenisRef.current.scrollTo(top, {
-        duration: HERO_SNAP_DURATION,
+        duration: getHeroSnapDuration(
+          currentProgress,
+          HERO_STAGE_STARTS[index],
+        ),
         easing: HERO_SNAP_EASING,
       })
     } else {
