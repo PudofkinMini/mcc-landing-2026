@@ -7,13 +7,8 @@ import { HERO_STAGE_STARTS, HERO_TIMELINE_END } from './heroTimeline'
 
 const HERO_SNAP_POINTS = [...HERO_STAGE_STARTS, HERO_TIMELINE_END]
 const HERO_SNAP_EPSILON = 0.006
-const HERO_SNAP_DELAY = 170
-const HERO_SNAP_EASING = (time) =>
-  time < 0.5
-    ? 4 * Math.pow(time, 3)
-    : 1 - Math.pow(-2 * time + 2, 3) / 2
-const getSnapDuration = (from, to) =>
-  Math.max(0.85, Math.min(2, 0.72 + Math.abs(to - from) * 3.1))
+const HERO_SNAP_DURATION = 0.8
+const HERO_SNAP_EASING = (time) => 1 - Math.pow(1 - time, 3)
 const getViewportHeight = () =>
   window.visualViewport?.height ?? window.innerHeight
 
@@ -232,14 +227,14 @@ function HomeHero() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const activeStage = HERO_STAGE_STARTS.reduce(
     (currentStage, start, index) =>
-      scrollProgress >= start ? index : currentStage,
+      scrollProgress + HERO_SNAP_EPSILON >= start ? index : currentStage,
     0,
   )
 
   useEffect(() => {
     let measureFrame = 0
-    let snapTimer = 0
-    let gesture = null
+    let snapTargetIndex = null
+    let snapDirection = 0
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     const getTrackMetrics = () => {
@@ -265,103 +260,83 @@ function HomeHero() {
       }
     }
 
-    const beginGesture = (lenis) => {
+    const getHeroProgress = (lenis) => {
       const metrics = getTrackMetrics()
       if (
         !metrics ||
         lenis.targetScroll < metrics.top - 1 ||
         lenis.targetScroll > metrics.end + 1
       ) {
-        return false
+        return null
       }
 
-      gesture = {
-        startProgress: clampProgress(
-          (lenis.targetScroll - metrics.top) / metrics.distance,
+      return {
+        metrics,
+        progress: clampProgress(
+          (lenis.animatedScroll - metrics.top) / metrics.distance,
         ),
-        distance: 0,
-        peakDelta: 0,
       }
-      return true
     }
 
-    const snapGesture = (lenis) => {
-      snapTimer = 0
-      const completedGesture = gesture
-      gesture = null
-      if (!completedGesture) return
-
-      const direction = Math.sign(completedGesture.distance)
-      const longGesture =
-        Math.abs(completedGesture.distance) >=
-        Math.min(180, getViewportHeight() * 0.2)
-      const fastGesture = completedGesture.peakDelta >= 48
-      if (!direction || (!longGesture && !fastGesture)) return
-
-      const snapProgress =
-        direction > 0
-          ? HERO_SNAP_POINTS.find(
-              (point) =>
-                point > completedGesture.startProgress + HERO_SNAP_EPSILON,
-            )
-          : HERO_SNAP_POINTS.findLast(
-              (point) =>
-                point < completedGesture.startProgress - HERO_SNAP_EPSILON,
-            )
-      const metrics = getTrackMetrics()
-      if (snapProgress === undefined || !metrics) return
-      const currentProgress = clampProgress(
-        (lenis.targetScroll - metrics.top) / metrics.distance,
-      )
-
-      lenis.scrollTo(metrics.top + snapProgress * metrics.distance, {
-        duration: getSnapDuration(currentProgress, snapProgress),
+    const scrollToSnapPoint = (lenis, metrics, targetIndex, direction) => {
+      snapTargetIndex = targetIndex
+      snapDirection = direction
+      lenis.scrollTo(metrics.top + HERO_SNAP_POINTS[targetIndex] * metrics.distance, {
+        duration: HERO_SNAP_DURATION,
         easing: HERO_SNAP_EASING,
         userData: { heroSnap: true },
+        onComplete: () => {
+          if (snapTargetIndex === targetIndex) {
+            snapTargetIndex = null
+            snapDirection = 0
+          }
+        },
       })
     }
 
-    const lenis = reducedMotion.matches
+    let lenis = null
+    const onVirtualScroll = ({ deltaY, event }) => {
+      const direction = Math.sign(deltaY)
+      if (!lenis || event.ctrlKey || !direction) return
+
+      const hero = getHeroProgress(lenis)
+      if (!hero) return
+
+      if (snapTargetIndex !== null) {
+        event.preventDefault()
+        if (direction !== snapDirection) {
+          const reversedTarget = snapTargetIndex + direction
+          if (reversedTarget >= 0 && reversedTarget < HERO_SNAP_POINTS.length) {
+            scrollToSnapPoint(lenis, hero.metrics, reversedTarget, direction)
+          }
+        }
+        return false
+      }
+
+      const targetIndex =
+        direction > 0
+          ? HERO_SNAP_POINTS.findIndex(
+              (point) => point > hero.progress + HERO_SNAP_EPSILON,
+            )
+          : HERO_SNAP_POINTS.findLastIndex(
+              (point) => point < hero.progress - HERO_SNAP_EPSILON,
+            )
+
+      if (targetIndex === -1) return
+      event.preventDefault()
+      scrollToSnapPoint(lenis, hero.metrics, targetIndex, direction)
+      return false
+    }
+
+    lenis = reducedMotion.matches
       ? null
       : new Lenis({
           autoRaf: true,
-          smoothWheel: true,
-          syncTouch: true,
-          syncTouchLerp: 0.075,
-          touchInertiaExponent: 1.7,
+          virtualScroll: onVirtualScroll,
         })
 
     lenisRef.current = lenis
-    const onVirtualScroll = lenis
-      ? ({ deltaY, event }) => {
-          if (event.ctrlKey) return
-
-          if (event.type === 'touchstart') {
-            window.clearTimeout(snapTimer)
-            beginGesture(lenis)
-            return
-          }
-
-          if (!gesture && !beginGesture(lenis)) return
-
-          if (event.type !== 'touchend') {
-            gesture.distance += deltaY
-            gesture.peakDelta = Math.max(
-              gesture.peakDelta,
-              Math.abs(deltaY),
-            )
-          }
-
-          window.clearTimeout(snapTimer)
-          snapTimer = window.setTimeout(
-            () => snapGesture(lenis),
-            event.type === 'touchend' ? 80 : HERO_SNAP_DELAY,
-          )
-        }
-      : null
-
-    if (lenis && onVirtualScroll) {
-      lenis.on('virtual-scroll', onVirtualScroll)
+    if (lenis) {
       lenis.on('scroll', requestUpdate)
     }
 
@@ -375,10 +350,8 @@ function HomeHero() {
       window.removeEventListener('resize', requestUpdate)
       window.visualViewport?.removeEventListener('resize', requestUpdate)
       window.visualViewport?.removeEventListener('scroll', requestUpdate)
-      window.clearTimeout(snapTimer)
       if (measureFrame) window.cancelAnimationFrame(measureFrame)
-      if (lenis && onVirtualScroll) {
-        lenis.off('virtual-scroll', onVirtualScroll)
+      if (lenis) {
         lenis.off('scroll', requestUpdate)
         lenis.destroy()
       }
@@ -394,7 +367,7 @@ function HomeHero() {
     const top = trackTop + HERO_STAGE_STARTS[index] * distance
     if (lenisRef.current) {
       lenisRef.current.scrollTo(top, {
-        duration: getSnapDuration(scrollProgress, HERO_STAGE_STARTS[index]),
+        duration: HERO_SNAP_DURATION,
         easing: HERO_SNAP_EASING,
       })
     } else {
