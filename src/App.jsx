@@ -1,8 +1,14 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Loader } from '@react-three/drei'
+import Lenis from 'lenis'
 import { RouteWorld } from './RouteWorld'
-import { HERO_STAGE_STARTS } from './heroTimeline'
+import { HERO_STAGE_STARTS, HERO_TIMELINE_END } from './heroTimeline'
+
+const HERO_SNAP_POINTS = [...HERO_STAGE_STARTS, HERO_TIMELINE_END]
+const HERO_SNAP_EPSILON = 0.006
+const HERO_SNAP_DELAY = 140
+const HERO_SNAP_EASING = (time) => 1 - Math.pow(1 - time, 4)
 
 const stages = [
   {
@@ -189,11 +195,8 @@ function StageNav({ activeStage, scrollProgress, setStage }) {
     <nav className="stage-nav" aria-label="Route story chapters">
       {stages.map((stage, index) => {
         const start = HERO_STAGE_STARTS[index]
-        const end = HERO_STAGE_STARTS[index + 1]
-        const lineProgress =
-          index === stages.length - 1
-            ? Number(scrollProgress >= start)
-            : clampProgress((scrollProgress - start) / (end - start))
+        const end = HERO_STAGE_STARTS[index + 1] ?? HERO_TIMELINE_END
+        const lineProgress = clampProgress((scrollProgress - start) / (end - start))
 
         return (
           <button
@@ -218,6 +221,7 @@ function StageNav({ activeStage, scrollProgress, setStage }) {
 
 function HomeHero() {
   const trackRef = useRef(null)
+  const lenisRef = useRef(null)
   const [scrollProgress, setScrollProgress] = useState(0)
   const activeStage = HERO_STAGE_STARTS.reduce(
     (currentStage, start, index) =>
@@ -227,67 +231,25 @@ function HomeHero() {
 
   useEffect(() => {
     let measureFrame = 0
-    let momentumFrame = 0
-    let lastTime = 0
-    let currentProgress = 0
-    let targetProgress = 0
-    let velocity = 0
-    let initialized = false
+    let snapTimer = 0
+    let gesture = null
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
-    const animateProgress = (time) => {
-      momentumFrame = 0
-      const delta = lastTime
-        ? Math.min((time - lastTime) / 1000, 1 / 30)
-        : 1 / 60
-      lastTime = time
-
-      const stiffness = window.innerWidth <= 800 ? 72 : 88
-      const damping = 2 * Math.sqrt(stiffness) * 0.88
-      velocity +=
-        ((targetProgress - currentProgress) * stiffness - velocity * damping) *
-        delta
-      currentProgress += velocity * delta
-
-      if (currentProgress <= 0 || currentProgress >= 1) {
-        currentProgress = clampProgress(currentProgress)
-        velocity = 0
-      }
-
-      const settled =
-        Math.abs(targetProgress - currentProgress) < 0.0001 &&
-        Math.abs(velocity) < 0.0005
-
-      if (settled) {
-        currentProgress = targetProgress
-        velocity = 0
-      }
-
-      setScrollProgress(currentProgress)
-      if (!settled) {
-        momentumFrame = window.requestAnimationFrame(animateProgress)
-      }
+    const getTrackMetrics = () => {
+      if (!trackRef.current) return null
+      const rect = trackRef.current.getBoundingClientRect()
+      const top = window.scrollY + rect.top
+      const distance = Math.max(1, rect.height - window.innerHeight)
+      return { top, distance, end: top + distance }
     }
 
     const updateProgress = () => {
       measureFrame = 0
-      if (!trackRef.current) return
-      const rect = trackRef.current.getBoundingClientRect()
-      const distance = Math.max(1, rect.height - window.innerHeight)
-      targetProgress = clampProgress(-rect.top / distance)
-
-      if (!initialized || reducedMotion.matches) {
-        initialized = true
-        currentProgress = targetProgress
-        velocity = 0
-        setScrollProgress(currentProgress)
-        return
-      }
-
-      if (!momentumFrame) {
-        lastTime = 0
-        momentumFrame = window.requestAnimationFrame(animateProgress)
-      }
+      const metrics = getTrackMetrics()
+      if (!metrics) return
+      setScrollProgress(
+        clampProgress((window.scrollY - metrics.top) / metrics.distance),
+      )
     }
 
     const requestUpdate = () => {
@@ -296,14 +258,117 @@ function HomeHero() {
       }
     }
 
+    const beginGesture = (lenis) => {
+      const metrics = getTrackMetrics()
+      if (
+        !metrics ||
+        lenis.targetScroll < metrics.top - 1 ||
+        lenis.targetScroll > metrics.end + 1
+      ) {
+        return false
+      }
+
+      gesture = {
+        startProgress: clampProgress(
+          (lenis.targetScroll - metrics.top) / metrics.distance,
+        ),
+        distance: 0,
+        peakDelta: 0,
+      }
+      return true
+    }
+
+    const snapGesture = (lenis) => {
+      snapTimer = 0
+      const completedGesture = gesture
+      gesture = null
+      if (!completedGesture) return
+
+      const direction = Math.sign(completedGesture.distance)
+      const longGesture =
+        Math.abs(completedGesture.distance) >=
+        Math.min(180, window.innerHeight * 0.2)
+      const fastGesture = completedGesture.peakDelta >= 48
+      if (!direction || (!longGesture && !fastGesture)) return
+
+      const snapProgress =
+        direction > 0
+          ? HERO_SNAP_POINTS.find(
+              (point) =>
+                point > completedGesture.startProgress + HERO_SNAP_EPSILON,
+            )
+          : HERO_SNAP_POINTS.findLast(
+              (point) =>
+                point < completedGesture.startProgress - HERO_SNAP_EPSILON,
+            )
+      const metrics = getTrackMetrics()
+      if (snapProgress === undefined || !metrics) return
+
+      lenis.scrollTo(metrics.top + snapProgress * metrics.distance, {
+        duration: 0.9,
+        easing: HERO_SNAP_EASING,
+        userData: { heroSnap: true },
+      })
+    }
+
+    const lenis = reducedMotion.matches
+      ? null
+      : new Lenis({
+          autoRaf: true,
+          smoothWheel: true,
+          syncTouch: true,
+          syncTouchLerp: 0.075,
+          touchInertiaExponent: 1.7,
+        })
+
+    lenisRef.current = lenis
+    const onVirtualScroll = lenis
+      ? ({ deltaY, event }) => {
+          if (event.ctrlKey) return
+
+          if (event.type === 'touchstart') {
+            window.clearTimeout(snapTimer)
+            beginGesture(lenis)
+            return
+          }
+
+          if (!gesture && !beginGesture(lenis)) return
+
+          if (event.type !== 'touchend') {
+            gesture.distance += deltaY
+            gesture.peakDelta = Math.max(
+              gesture.peakDelta,
+              Math.abs(deltaY),
+            )
+          }
+
+          window.clearTimeout(snapTimer)
+          snapTimer = window.setTimeout(
+            () => snapGesture(lenis),
+            event.type === 'touchend' ? 80 : HERO_SNAP_DELAY,
+          )
+        }
+      : null
+
+    if (lenis && onVirtualScroll) {
+      lenis.on('virtual-scroll', onVirtualScroll)
+      lenis.on('scroll', requestUpdate)
+    }
+
     updateProgress()
     window.addEventListener('scroll', requestUpdate, { passive: true })
     window.addEventListener('resize', requestUpdate)
     return () => {
       window.removeEventListener('scroll', requestUpdate)
       window.removeEventListener('resize', requestUpdate)
+      window.clearTimeout(snapTimer)
       if (measureFrame) window.cancelAnimationFrame(measureFrame)
-      if (momentumFrame) window.cancelAnimationFrame(momentumFrame)
+      if (lenis && onVirtualScroll) {
+        lenis.off('virtual-scroll', onVirtualScroll)
+        lenis.off('scroll', requestUpdate)
+        lenis.destroy()
+      }
+      if (lenisRef.current === lenis) lenisRef.current = null
     }
   }, [])
 
@@ -312,10 +377,20 @@ function HomeHero() {
     const rect = trackRef.current.getBoundingClientRect()
     const trackTop = window.scrollY + rect.top
     const distance = rect.height - window.innerHeight
-    window.scrollTo({
-      top: trackTop + HERO_STAGE_STARTS[index] * distance,
-      behavior: 'smooth',
-    })
+    const top = trackTop + HERO_STAGE_STARTS[index] * distance
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(top, {
+        duration: 0.9,
+        easing: HERO_SNAP_EASING,
+      })
+    } else {
+      window.scrollTo({
+        top,
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'auto'
+          : 'smooth',
+      })
+    }
   }
 
   return (

@@ -21,3 +21,5 @@ export const HERO_STAGE_STARTS = [
   TRUCK_TIMELINE.middleDeparture,
   0.88,
 ]
+
+export const HERO_TIMELINE_END = 1
