@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Billboard, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
-import { LINEN_TIMELINE, TRUCK_TIMELINE } from './heroTimeline'
+import {
+  LINEN_TIMELINE,
+  SMILEY_TIMELINE,
+  TRUCK_TIMELINE,
+} from './heroTimeline'
 
 const MOBILE_BREAKPOINT = 800
 const DESKTOP_FOV = 34
@@ -82,6 +86,7 @@ const truckRearX = -6.02
 const roadDeckY = 0.36
 const roadDeckHeight = 0.1
 const customerBaseY = roadDeckY + roadDeckHeight / 2 + 0.01
+const restaurantHeight = 3
 
 const loadingForkCurves = loadingLanes.map((z) => {
   const direction = Math.sign(z)
@@ -118,7 +123,7 @@ const customerSites = [
     stop: [8.4, truckHeight, 7.9],
     lane: 7.9,
     color: colors.coral,
-    roofY: customerBaseY + 2.1,
+    roofY: customerBaseY + restaurantHeight,
   },
   {
     id: 'hotel',
@@ -888,28 +893,28 @@ function RoadNetwork() {
 function Restaurant({ position }) {
   return (
     <group position={position}>
-      <RoundedBox args={[4.1, 2.1, 4.3]} radius={0.22} smoothness={4} position={[0, 1.05, 0]} castShadow receiveShadow>
+      <RoundedBox args={[4.1, restaurantHeight, 4.3]} radius={0.22} smoothness={4} position={[0, restaurantHeight / 2, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#c7c9c8" roughness={0.82} />
       </RoundedBox>
-      <RoundedBox args={[1.25, 1.35, 2.7]} radius={0.14} smoothness={3} position={[-2.15, 0.68, 0]} castShadow>
+      <RoundedBox args={[1.25, 1.9, 2.7]} radius={0.14} smoothness={3} position={[-2.15, 0.95, 0]} castShadow>
         <meshStandardMaterial color={colors.cream} />
       </RoundedBox>
-      <mesh position={[-2.79, 1.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh position={[-2.79, 2.02, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[2.72, 0.22, 0.12]} />
         <meshStandardMaterial color={colors.coral} />
       </mesh>
       {[-1.08, -0.54, 0, 0.54, 1.08].map((z, index) => (
-        <mesh key={z} position={[-2.86, 1.34, z]} rotation={[0, -Math.PI / 2, -0.16]}>
+        <mesh key={z} position={[-2.86, 1.86, z]} rotation={[0, -Math.PI / 2, -0.16]}>
           <boxGeometry args={[0.47, 0.42, 0.08]} />
           <meshStandardMaterial color={index % 2 ? colors.cream : colors.coral} />
         </mesh>
       ))}
-      <Window position={[-2.21, 0.78, -0.84]} rotation={[0, -Math.PI / 2, 0]} size={[0.75, 0.8]} />
-      <Window position={[-2.21, 0.78, 0.84]} rotation={[0, -Math.PI / 2, 0]} size={[0.75, 0.8]} />
+      <Window position={[-2.21, 1.08, -0.84]} rotation={[0, -Math.PI / 2, 0]} size={[0.82, 1]} />
+      <Window position={[-2.21, 1.08, 0.84]} rotation={[0, -Math.PI / 2, 0]} size={[0.82, 1]} />
       {[-1.35, 1.35].map((z) => (
         <group key={z} position={[-3.25, 0, z]}>
-          <mesh position={[0, 0.53, 0]} castShadow>
-            <cylinderGeometry args={[0.64, 0.12, 0.72, 18]} />
+          <mesh position={[0, 0.78, 0]} castShadow>
+            <cylinderGeometry args={[0.64, 0.12, 1.2, 18]} />
             <meshStandardMaterial color={colors.gold} />
           </mesh>
           <mesh position={[0, 0.12, 0]}>
@@ -1120,7 +1125,11 @@ function Smiley({ position, scrollProgress, delay = 0 }) {
   const smiley = useRef()
 
   useFrame(() => {
-    const appear = smooth(scrollProgress, 0.87 + delay, 0.94 + delay)
+    const appear = smoother(
+      scrollProgress,
+      SMILEY_TIMELINE.start + delay,
+      SMILEY_TIMELINE.end,
+    )
     const bounce = Math.sin(appear * Math.PI) * 0.4
     smiley.current.scale.setScalar(appear * 2.1)
     smiley.current.position.y = position[1] - 0.35 + appear * 2.25 + bounce
@@ -1185,7 +1194,7 @@ function CustomerWorld({ scrollProgress }) {
           key={`${site.id}-smiley`}
           position={[site.position[0], site.roofY, site.position[2]]}
           scrollProgress={scrollProgress}
-          delay={index * 0.012}
+          delay={index * SMILEY_TIMELINE.stagger}
         />
       ))}
     </>

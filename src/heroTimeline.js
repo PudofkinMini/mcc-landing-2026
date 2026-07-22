@@ -6,9 +6,9 @@ export const LINEN_TIMELINE = {
 }
 
 export const TRUCK_TIMELINE = {
-  middleDeparture: 0.48,
+  middleDeparture: 0.44,
   departureSpacing: 0.035,
-  driveEnd: 0.92,
+  driveEnd: 0.868,
 }
 
 const middleLoadingStart =
@@ -19,7 +19,13 @@ export const HERO_STAGE_STARTS = [
   0,
   middleLoadingStart,
   TRUCK_TIMELINE.middleDeparture,
-  0.91,
+  0.88,
 ]
 
 export const HERO_TIMELINE_END = 1
+
+export const SMILEY_TIMELINE = {
+  start: HERO_STAGE_STARTS[3],
+  end: HERO_TIMELINE_END - 0.01,
+  stagger: 0.008,
+}
