@@ -3,11 +3,14 @@ import { Canvas } from '@react-three/fiber'
 import { Environment, Loader } from '@react-three/drei'
 import Lenis from 'lenis'
 import { RouteWorld } from './RouteWorld'
-import { HERO_STAGE_STARTS, HERO_TIMELINE_END } from './heroTimeline'
+import {
+  HERO_SNAP_POINTS,
+  HERO_STAGE_STARTS,
+  HERO_TIMELINE_END,
+} from './heroTimeline'
 
-const HERO_SNAP_POINTS = [...HERO_STAGE_STARTS, HERO_TIMELINE_END]
 const HERO_SNAP_EPSILON = 0.006
-const HERO_STAGE_SNAP_DURATIONS = [0.8, 0.65, 1.45, 1]
+const HERO_STAGE_SNAP_DURATIONS = [1.1, 1.6]
 const HERO_MIN_SNAP_DURATION = 0.35
 const HERO_MAX_SNAP_DURATION = 1.6
 const HERO_SNAP_EASING = (time) => 1 - Math.pow(1 - time, 3)
@@ -48,13 +51,7 @@ const stages = [
   },
   {
     label: 'Deliver',
-    eyebrow: '03 / Out on route',
-    title: 'Three routes. One connected view.',
-    text: 'Give every driver the right customer details in the moment while the plant and office stay in step.',
-  },
-  {
-    label: 'Serve',
-    eyebrow: '04 / Service delivered',
+    eyebrow: '03 / Service delivered',
     title: 'The right linen, right where it belongs.',
     text: 'From restaurants and hotels to major healthcare facilities, every stop is accurate, accountable, and ready for what comes next.',
   },
