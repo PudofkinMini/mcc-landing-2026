@@ -227,7 +227,7 @@ function HomeHero() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const activeStage = HERO_STAGE_STARTS.reduce(
     (currentStage, start, index) =>
-      scrollProgress >= start ? index : currentStage,
+      scrollProgress + HERO_SNAP_EPSILON >= start ? index : currentStage,
     0,
   )
 
