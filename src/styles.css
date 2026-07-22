@@ -322,8 +322,8 @@ blockquote {
 
 .hero-track {
   position: relative;
-  height: 650vh;
-  min-height: 3600px;
+  height: 500svh;
+  min-height: 3000px;
 }
 
 .hero-frame {
@@ -1889,7 +1889,7 @@ button:hover .arrow-icon {
   }
 
   .hero-track {
-    height: 560vh;
+    height: 500svh;
   }
 
   .hero-copy > span {
