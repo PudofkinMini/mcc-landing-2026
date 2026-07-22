@@ -294,49 +294,49 @@ function HomeHero() {
       })
     }
 
-    const lenis = reducedMotion.matches
+    let lenis = null
+    const onVirtualScroll = ({ deltaY, event }) => {
+      const direction = Math.sign(deltaY)
+      if (!lenis || event.ctrlKey || !direction) return
+
+      const hero = getHeroProgress(lenis)
+      if (!hero) return
+
+      if (snapTargetIndex !== null) {
+        event.preventDefault()
+        if (direction !== snapDirection) {
+          const reversedTarget = snapTargetIndex + direction
+          if (reversedTarget >= 0 && reversedTarget < HERO_SNAP_POINTS.length) {
+            scrollToSnapPoint(lenis, hero.metrics, reversedTarget, direction)
+          }
+        }
+        return false
+      }
+
+      const targetIndex =
+        direction > 0
+          ? HERO_SNAP_POINTS.findIndex(
+              (point) => point > hero.progress + HERO_SNAP_EPSILON,
+            )
+          : HERO_SNAP_POINTS.findLastIndex(
+              (point) => point < hero.progress - HERO_SNAP_EPSILON,
+            )
+
+      if (targetIndex === -1) return
+      event.preventDefault()
+      scrollToSnapPoint(lenis, hero.metrics, targetIndex, direction)
+      return false
+    }
+
+    lenis = reducedMotion.matches
       ? null
       : new Lenis({
           autoRaf: true,
+          virtualScroll: onVirtualScroll,
         })
 
     lenisRef.current = lenis
-    const onVirtualScroll = lenis
-      ? ({ deltaY, event }) => {
-          const direction = Math.sign(deltaY)
-          if (event.ctrlKey || !direction) return
-
-          const hero = getHeroProgress(lenis)
-          if (!hero) return
-
-          if (snapTargetIndex !== null) {
-            event.preventDefault()
-            if (direction === snapDirection) return
-
-            const reversedTarget = snapTargetIndex + direction
-            if (reversedTarget >= 0 && reversedTarget < HERO_SNAP_POINTS.length) {
-              scrollToSnapPoint(lenis, hero.metrics, reversedTarget, direction)
-            }
-            return
-          }
-
-          const targetIndex =
-            direction > 0
-              ? HERO_SNAP_POINTS.findIndex(
-                  (point) => point > hero.progress + HERO_SNAP_EPSILON,
-                )
-              : HERO_SNAP_POINTS.findLastIndex(
-                  (point) => point < hero.progress - HERO_SNAP_EPSILON,
-                )
-
-          if (targetIndex === -1) return
-          event.preventDefault()
-          scrollToSnapPoint(lenis, hero.metrics, targetIndex, direction)
-        }
-      : null
-
-    if (lenis && onVirtualScroll) {
-      lenis.on('virtual-scroll', onVirtualScroll)
+    if (lenis) {
       lenis.on('scroll', requestUpdate)
     }
 
@@ -351,8 +351,7 @@ function HomeHero() {
       window.visualViewport?.removeEventListener('resize', requestUpdate)
       window.visualViewport?.removeEventListener('scroll', requestUpdate)
       if (measureFrame) window.cancelAnimationFrame(measureFrame)
-      if (lenis && onVirtualScroll) {
-        lenis.off('virtual-scroll', onVirtualScroll)
+      if (lenis) {
         lenis.off('scroll', requestUpdate)
         lenis.destroy()
       }
