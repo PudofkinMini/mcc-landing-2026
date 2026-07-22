@@ -25,11 +25,12 @@ const colors = {
   white: '#f5f5f3',
 }
 
-const pizzaSliceShape = new THREE.Shape()
-pizzaSliceShape.moveTo(-0.34, -0.3)
-pizzaSliceShape.lineTo(0.34, -0.3)
-pizzaSliceShape.lineTo(0, 0.4)
-pizzaSliceShape.closePath()
+const knifeBladeShape = new THREE.Shape()
+knifeBladeShape.moveTo(-0.05, -0.08)
+knifeBladeShape.lineTo(0.05, -0.08)
+knifeBladeShape.lineTo(0.11, 0.4)
+knifeBladeShape.lineTo(-0.05, 0.32)
+knifeBladeShape.closePath()
 
 const smooth = (value, start, end) => THREE.MathUtils.smoothstep(value, start, end)
 const smoother = (value, start, end) => THREE.MathUtils.smootherstep(value, start, end)
@@ -1069,12 +1070,26 @@ function SignIcon({ type }) {
 
   return (
     <group position={[0, 0, 0.1]}>
-      <mesh>
-        <shapeGeometry args={[pizzaSliceShape]} />
+      <mesh position={[-0.25, -0.08, 0]}>
+        <boxGeometry args={[0.08, 0.55, 0.04]} />
         <meshBasicMaterial color={colors.white} />
       </mesh>
-      <mesh position={[0, -0.27, 0.03]}>
-        <boxGeometry args={[0.72, 0.11, 0.04]} />
+      <mesh position={[-0.25, 0.18, 0]}>
+        <boxGeometry args={[0.28, 0.08, 0.04]} />
+        <meshBasicMaterial color={colors.white} />
+      </mesh>
+      {[-0.35, -0.25, -0.15].map((x) => (
+        <mesh key={x} position={[x, 0.31, 0]}>
+          <boxGeometry args={[0.045, 0.24, 0.04]} />
+          <meshBasicMaterial color={colors.white} />
+        </mesh>
+      ))}
+      <mesh position={[0.25, -0.17, 0]}>
+        <boxGeometry args={[0.09, 0.43, 0.04]} />
+        <meshBasicMaterial color={colors.white} />
+      </mesh>
+      <mesh position={[0.25, 0.16, 0]}>
+        <shapeGeometry args={[knifeBladeShape]} />
         <meshBasicMaterial color={colors.white} />
       </mesh>
     </group>
@@ -1101,7 +1116,43 @@ function CustomerSign({ site }) {
   )
 }
 
-function CustomerWorld() {
+function Smiley({ position, scrollProgress, delay = 0 }) {
+  const smiley = useRef()
+
+  useFrame(() => {
+    const appear = smooth(scrollProgress, 0.87 + delay, 0.94 + delay)
+    const bounce = Math.sin(appear * Math.PI) * 0.4
+    smiley.current.scale.setScalar(appear * 2.1)
+    smiley.current.position.y = position[1] - 0.35 + appear * 2.25 + bounce
+  })
+
+  return (
+    <group ref={smiley} position={position} scale={0}>
+      <Billboard>
+        <mesh rotation={[Math.PI / 2, 0, 0]} renderOrder={10}>
+          <cylinderGeometry args={[0.72, 0.72, 0.18, 36]} />
+          <meshBasicMaterial color="#ffd35a" depthTest={false} />
+        </mesh>
+        {[-0.25, 0.25].map((x) => (
+          <mesh key={x} position={[x, 0.2, 0.13]} renderOrder={11}>
+            <sphereGeometry args={[0.075, 14, 14]} />
+            <meshBasicMaterial color={colors.ink} depthTest={false} />
+          </mesh>
+        ))}
+        <mesh
+          position={[0, -0.04, 0.13]}
+          rotation={[0, 0, Math.PI]}
+          renderOrder={11}
+        >
+          <torusGeometry args={[0.33, 0.055, 10, 24, Math.PI]} />
+          <meshBasicMaterial color={colors.ink} depthTest={false} />
+        </mesh>
+      </Billboard>
+    </group>
+  )
+}
+
+function CustomerWorld({ scrollProgress }) {
   const treePositions = [
     [7.8, -11.6, 0.85],
     [10.2, -12, 1],
@@ -1127,6 +1178,14 @@ function CustomerWorld() {
         <CustomerSign
           key={site.id}
           site={site}
+        />
+      ))}
+      {customerSites.map((site, index) => (
+        <Smiley
+          key={`${site.id}-smiley`}
+          position={[site.position[0], site.roofY, site.position[2]]}
+          scrollProgress={scrollProgress}
+          delay={index * 0.012}
         />
       ))}
     </>
@@ -1161,7 +1220,7 @@ export function RouteWorld({ scrollProgress }) {
           <meshStandardMaterial color="#afb2b0" roughness={0.95} />
         </RoundedBox>
         <Plant scrollProgress={scrollProgress} />
-        <CustomerWorld />
+        <CustomerWorld scrollProgress={scrollProgress} />
         {customerSites.map((site, index) => (
           <MovingTruck key={site.id} index={index} scrollProgress={scrollProgress} />
         ))}
