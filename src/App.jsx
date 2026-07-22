@@ -7,8 +7,15 @@ import { HERO_STAGE_STARTS, HERO_TIMELINE_END } from './heroTimeline'
 
 const HERO_SNAP_POINTS = [...HERO_STAGE_STARTS, HERO_TIMELINE_END]
 const HERO_SNAP_EPSILON = 0.006
-const HERO_SNAP_DELAY = 140
-const HERO_SNAP_EASING = (time) => 1 - Math.pow(1 - time, 4)
+const HERO_SNAP_DELAY = 170
+const HERO_SNAP_EASING = (time) =>
+  time < 0.5
+    ? 4 * Math.pow(time, 3)
+    : 1 - Math.pow(-2 * time + 2, 3) / 2
+const getSnapDuration = (from, to) =>
+  Math.max(0.85, Math.min(2, 0.72 + Math.abs(to - from) * 3.1))
+const getViewportHeight = () =>
+  window.visualViewport?.height ?? window.innerHeight
 
 const stages = [
   {
@@ -239,7 +246,7 @@ function HomeHero() {
       if (!trackRef.current) return null
       const rect = trackRef.current.getBoundingClientRect()
       const top = window.scrollY + rect.top
-      const distance = Math.max(1, rect.height - window.innerHeight)
+      const distance = Math.max(1, rect.height - getViewportHeight())
       return { top, distance, end: top + distance }
     }
 
@@ -287,7 +294,7 @@ function HomeHero() {
       const direction = Math.sign(completedGesture.distance)
       const longGesture =
         Math.abs(completedGesture.distance) >=
-        Math.min(180, window.innerHeight * 0.2)
+        Math.min(180, getViewportHeight() * 0.2)
       const fastGesture = completedGesture.peakDelta >= 48
       if (!direction || (!longGesture && !fastGesture)) return
 
@@ -303,9 +310,12 @@ function HomeHero() {
             )
       const metrics = getTrackMetrics()
       if (snapProgress === undefined || !metrics) return
+      const currentProgress = clampProgress(
+        (lenis.targetScroll - metrics.top) / metrics.distance,
+      )
 
       lenis.scrollTo(metrics.top + snapProgress * metrics.distance, {
-        duration: 0.9,
+        duration: getSnapDuration(currentProgress, snapProgress),
         easing: HERO_SNAP_EASING,
         userData: { heroSnap: true },
       })
@@ -358,9 +368,13 @@ function HomeHero() {
     updateProgress()
     window.addEventListener('scroll', requestUpdate, { passive: true })
     window.addEventListener('resize', requestUpdate)
+    window.visualViewport?.addEventListener('resize', requestUpdate)
+    window.visualViewport?.addEventListener('scroll', requestUpdate)
     return () => {
       window.removeEventListener('scroll', requestUpdate)
       window.removeEventListener('resize', requestUpdate)
+      window.visualViewport?.removeEventListener('resize', requestUpdate)
+      window.visualViewport?.removeEventListener('scroll', requestUpdate)
       window.clearTimeout(snapTimer)
       if (measureFrame) window.cancelAnimationFrame(measureFrame)
       if (lenis && onVirtualScroll) {
@@ -376,11 +390,11 @@ function HomeHero() {
     if (!trackRef.current) return
     const rect = trackRef.current.getBoundingClientRect()
     const trackTop = window.scrollY + rect.top
-    const distance = rect.height - window.innerHeight
+    const distance = rect.height - getViewportHeight()
     const top = trackTop + HERO_STAGE_STARTS[index] * distance
     if (lenisRef.current) {
       lenisRef.current.scrollTo(top, {
-        duration: 0.9,
+        duration: getSnapDuration(scrollProgress, HERO_STAGE_STARTS[index]),
         easing: HERO_SNAP_EASING,
       })
     } else {
@@ -411,7 +425,7 @@ function HomeHero() {
         <div className="canvas-wrap" aria-hidden="true">
           <Canvas
             shadows
-            dpr={[1, 1.8]}
+            dpr={[1, 1.6]}
             gl={{ antialias: true, alpha: true }}
             camera={{ position: [-9, 9, 12], fov: 35 }}
           >
@@ -429,10 +443,18 @@ function HomeHero() {
         />
 
         <div className="scroll-hint">
-          <span>{activeStage === stages.length - 1 ? 'Keep exploring' : 'Follow the journey'}</span>
-          <svg viewBox="0 0 20 30" aria-hidden="true">
+          <span className="desktop-scroll-copy">
+            {activeStage === stages.length - 1 ? 'Keep exploring' : 'Follow the journey'}
+          </span>
+          <span className="mobile-scroll-copy">
+            {activeStage === stages.length - 1 ? 'Keep scrolling' : 'Swipe to progress'}
+          </span>
+          <svg className="desktop-scroll-icon" viewBox="0 0 20 30" aria-hidden="true">
             <rect x="1" y="1" width="18" height="28" rx="9" />
             <circle cx="10" cy="8" r="2" />
+          </svg>
+          <svg className="mobile-scroll-icon" viewBox="0 0 18 24" aria-hidden="true">
+            <path d="M9 2v17M4.5 14.5 9 19l4.5-4.5" />
           </svg>
         </div>
 
@@ -442,10 +464,10 @@ function HomeHero() {
         </div>
       </div>
       <Loader
-        containerStyles={{ background: '#e8eadc' }}
-        innerStyles={{ width: '160px', height: '2px', background: '#b7bbad' }}
-        barStyles={{ background: '#f2563d', height: '2px' }}
-        dataStyles={{ color: '#13282b', fontFamily: 'Arial, sans-serif', fontSize: '10px' }}
+        containerStyles={{ background: '#dcdddb' }}
+        innerStyles={{ width: '160px', height: '2px', background: '#b8bbb9' }}
+        barStyles={{ background: '#555a5c', height: '2px' }}
+        dataStyles={{ color: '#34383a', fontFamily: 'Arial, sans-serif', fontSize: '10px' }}
       />
     </section>
   )
