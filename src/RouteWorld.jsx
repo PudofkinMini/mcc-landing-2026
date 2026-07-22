@@ -1061,7 +1061,7 @@ function SignIcon({ type }) {
           <meshBasicMaterial color={colors.white} />
         </mesh>
         <RoundedBox args={[0.22, 0.12, 0.025]} radius={0.04} smoothness={3} position={[-0.2, 0.04, 0.035]}>
-          <meshBasicMaterial color={colors.darkInk} />
+          <meshBasicMaterial color={colors.white} />
         </RoundedBox>
       </group>
     )
@@ -1082,8 +1082,11 @@ function SignIcon({ type }) {
 }
 
 function CustomerSign({ site }) {
+  const { size } = useThree()
+  const signScale = size.width <= MOBILE_BREAKPOINT ? 1.65 : 1.15
+
   return (
-    <group position={[site.position[0], site.roofY, site.position[2]]}>
+    <group position={[site.position[0], site.roofY, site.position[2]]} scale={signScale}>
       <mesh position={[0, 0.72, 0]} castShadow>
         <cylinderGeometry args={[0.07, 0.09, 1.44, 12]} />
         <meshStandardMaterial color={colors.steel} metalness={0.18} roughness={0.62} />
