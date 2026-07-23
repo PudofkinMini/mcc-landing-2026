@@ -109,7 +109,7 @@ const loadingTransferCurves = loadingLanes.map((z) =>
       new THREE.Vector3(-7.02, 1.35, z * 0.32),
       new THREE.Vector3(-6.4, 1.38, z * 0.74),
       new THREE.Vector3(truckRearX, 1.4, z),
-      new THREE.Vector3(-5.5, 1.43, z),
+      new THREE.Vector3(truckRearX + 0.95, 1.43, z),
     ],
     false,
     'centripetal',
@@ -478,7 +478,13 @@ function LinenLoads({ scrollProgress }) {
           processPoint,
         )
         load.position.copy(processPoint)
-        load.scale.setScalar(THREE.MathUtils.lerp(1, 0.54, transferProgress))
+        load.scale.setScalar(
+          THREE.MathUtils.lerp(
+            1,
+            0.46,
+            smooth(transferProgress, 0, 0.8),
+          ),
+        )
       }
 
       load.visible = progress < 1
