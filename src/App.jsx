@@ -259,7 +259,7 @@ function HomeHero() {
               alpha: true,
               powerPreference: 'high-performance',
             }}
-            camera={{ position: [11.5, 11.5, 15], fov: 33 }}
+            camera={{ position: [17, 17, 22], fov: 33 }}
           >
             <Suspense fallback={null}>
               <RouteWorld

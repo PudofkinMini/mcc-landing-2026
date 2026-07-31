@@ -88,7 +88,7 @@ function CameraRig() {
   useFrame((_, delta) => {
     const mobile = size.width <= MOBILE_BREAKPOINT
     desired
-      .set(mobile ? 12.5 : 11.5, mobile ? 15.5 : 11.5, mobile ? 19 : 15)
+      .set(mobile ? 12.5 : 17, mobile ? 15.5 : 17, mobile ? 19 : 22)
       .addScaledVector(new THREE.Vector3(1, 0.35, 0), pointer.x * 0.22)
       .addScaledVector(new THREE.Vector3(0, 1, 0), pointer.y * 0.12)
     camera.position.x = THREE.MathUtils.damp(camera.position.x, desired.x, 5, delta)
@@ -515,7 +515,7 @@ function MovingRoute({ command, onStageChange, reducedMotion }) {
           }}
           position={[0, 0.132, -11 + index * 2]}
         >
-          <boxGeometry args={[0.11, 0.025, 0.95]} />
+          <boxGeometry args={[0.16, 0.025, 1.08]} />
           <meshBasicMaterial color={colors.line} />
         </mesh>
       ))}
