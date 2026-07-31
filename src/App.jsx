@@ -1,59 +1,32 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Loader } from '@react-three/drei'
-import Lenis from 'lenis'
 import { RouteWorld } from './RouteWorld'
-import {
-  HERO_SNAP_POINTS,
-  HERO_STAGE_STARTS,
-  HERO_TIMELINE_END,
-} from './heroTimeline'
-
-const HERO_SNAP_EPSILON = 0.006
-const HERO_STAGE_SNAP_DURATIONS = [1.1, 1.6]
-const HERO_MIN_SNAP_DURATION = 0.35
-const HERO_MAX_SNAP_DURATION = 1.6
-const HERO_SNAP_EASING = (time) => 1 - Math.pow(1 - time, 3)
-const getHeroSnapDuration = (fromProgress, toProgress) => {
-  const rangeStart = Math.min(fromProgress, toProgress)
-  const rangeEnd = Math.max(fromProgress, toProgress)
-  const duration = HERO_STAGE_SNAP_DURATIONS.reduce(
-    (total, stageDuration, index) => {
-      const stageStart = HERO_SNAP_POINTS[index]
-      const stageEnd = HERO_SNAP_POINTS[index + 1]
-      const overlap =
-        Math.max(0, Math.min(rangeEnd, stageEnd) - Math.max(rangeStart, stageStart))
-      return total + stageDuration * (overlap / (stageEnd - stageStart))
-    },
-    0,
-  )
-
-  return Math.min(
-    HERO_MAX_SNAP_DURATION,
-    Math.max(HERO_MIN_SNAP_DURATION, duration),
-  )
-}
-const getViewportHeight = () =>
-  window.visualViewport?.height ?? window.innerHeight
 
 const stages = [
   {
-    label: 'Process',
-    eyebrow: '01 / Inside the plant',
-    title: 'Every piece moves with purpose.',
-    text: 'Follow the work from the wash floor to a service-ready load—with every handoff visible in M-LINX.',
+    label: 'Plant',
+    eyebrow: '01 / Prepared at the plant',
+    title: 'One connected route. Every stop in view.',
+    text: 'M-LINX keeps production, loading, route service, and customer commitments moving from one dependable operating picture.',
   },
   {
-    label: 'Load',
-    eyebrow: '02 / Ready to roll',
-    title: 'Clean. Counted. On the right truck.',
-    text: 'Plant teams and route teams share one dependable picture of what is ready, what is loaded, and where it belongs.',
+    label: 'Restaurant',
+    eyebrow: '02 / Food service',
+    title: 'Service that keeps pace with every cover.',
+    text: 'Keep table linen, mats, and chef wear accurate through every delivery, adjustment, pickup, and proof of service.',
   },
   {
-    label: 'Deliver',
-    eyebrow: '03 / Service delivered',
-    title: 'The right linen, right where it belongs.',
-    text: 'From restaurants and hotels to major healthcare facilities, every stop is accurate, accountable, and ready for what comes next.',
+    label: 'Hotel',
+    eyebrow: '03 / Hospitality',
+    title: 'Every property ready for what arrives next.',
+    text: 'Give route teams a live view of standing orders, special requests, inventory, and the details behind every guest-ready room.',
+  },
+  {
+    label: 'Hospital',
+    eyebrow: '04 / Healthcare',
+    title: 'Accountability for the highest-stakes stop.',
+    text: 'Maintain the consistency, traceability, and rapid issue resolution that healthcare linen programs demand.',
   },
 ]
 
@@ -128,8 +101,6 @@ const processSteps = [
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
 const sitePath = (path = '/') => `${basePath}${path}`
-
-const clampProgress = (progress) => Math.max(0, Math.min(1, progress))
 
 function LogoMark() {
   return (
@@ -210,221 +181,62 @@ function Header({ menuOpen, setMenuOpen, currentPath }) {
   )
 }
 
-function StageNav({ activeStage, scrollProgress, setStage }) {
+function RouteStageNav({ activeStage, setStage }) {
   return (
-    <nav className="stage-nav" aria-label="Route story chapters">
-      {stages.map((stage, index) => {
-        const start = HERO_STAGE_STARTS[index]
-        const end = HERO_STAGE_STARTS[index + 1] ?? HERO_TIMELINE_END
-        const lineProgress = clampProgress((scrollProgress - start) / (end - start))
-
-        return (
-          <button
-            className={`stage-button ${activeStage === index ? 'is-active' : ''}`}
-            type="button"
-            key={stage.eyebrow}
-            onClick={() => setStage(index)}
-            aria-current={activeStage === index ? 'step' : undefined}
-            aria-label={`Go to chapter ${index + 1}: ${stage.title}`}
-          >
-            <span className="stage-number">{String(index + 1).padStart(2, '0')}</span>
-            <span className="stage-line">
-              <span className="stage-line-fill" style={{ transform: `scaleX(${lineProgress})` }} />
-            </span>
-            <span className="stage-label">{stage.label}</span>
-          </button>
-        )
-      })}
+    <nav className="route-stage-nav" aria-label="Route stops">
+      {stages.map((stage, index) => (
+        <button
+          className={`route-stage-button ${activeStage === index ? 'is-active' : ''}`}
+          type="button"
+          key={stage.label}
+          onClick={() => setStage(index)}
+          aria-current={activeStage === index ? 'step' : undefined}
+          aria-label={`Fast-forward to stop ${index + 1}: ${stage.label}`}
+        >
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <strong>{stage.label}</strong>
+        </button>
+      ))}
     </nav>
   )
 }
 
 function HomeHero() {
-  const trackRef = useRef(null)
-  const lenisRef = useRef(null)
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const activeStage = HERO_STAGE_STARTS.reduce(
-    (currentStage, start, index) =>
-      scrollProgress + HERO_SNAP_EPSILON >= start ? index : currentStage,
-    0,
-  )
+  const [activeStage, setActiveStage] = useState(0)
+  const [command, setCommand] = useState({ id: 0, stage: 0 })
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const commandId = useRef(0)
 
   useEffect(() => {
-    let measureFrame = 0
-    let snapTargetIndex = null
-    let snapDirection = 0
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-
-    const getTrackMetrics = () => {
-      if (!trackRef.current) return null
-      const rect = trackRef.current.getBoundingClientRect()
-      const top = window.scrollY + rect.top
-      const distance = Math.max(1, rect.height - getViewportHeight())
-      return { top, distance, end: top + distance }
-    }
-
-    const updateProgress = () => {
-      measureFrame = 0
-      const metrics = getTrackMetrics()
-      if (!metrics) return
-      setScrollProgress(
-        clampProgress((window.scrollY - metrics.top) / metrics.distance),
-      )
-    }
-
-    const requestUpdate = () => {
-      if (!measureFrame) {
-        measureFrame = window.requestAnimationFrame(updateProgress)
-      }
-    }
-
-    const getHeroProgress = (lenis) => {
-      const metrics = getTrackMetrics()
-      if (
-        !metrics ||
-        lenis.targetScroll < metrics.top - 1 ||
-        lenis.targetScroll > metrics.end + 1
-      ) {
-        return null
-      }
-
-      return {
-        metrics,
-        progress: clampProgress(
-          (lenis.animatedScroll - metrics.top) / metrics.distance,
-        ),
-      }
-    }
-
-    const scrollToSnapPoint = (
-      lenis,
-      metrics,
-      currentProgress,
-      targetIndex,
-      direction,
-    ) => {
-      snapTargetIndex = targetIndex
-      snapDirection = direction
-      const targetProgress = HERO_SNAP_POINTS[targetIndex]
-      lenis.scrollTo(metrics.top + targetProgress * metrics.distance, {
-        duration: getHeroSnapDuration(currentProgress, targetProgress),
-        easing: HERO_SNAP_EASING,
-        userData: { heroSnap: true },
-        onComplete: () => {
-          if (snapTargetIndex === targetIndex) {
-            snapTargetIndex = null
-            snapDirection = 0
-          }
-        },
-      })
-    }
-
-    let lenis = null
-    const onVirtualScroll = ({ deltaY, event }) => {
-      const direction = Math.sign(deltaY)
-      if (!lenis || event.ctrlKey || !direction) return
-
-      const hero = getHeroProgress(lenis)
-      if (!hero) return
-
-      if (snapTargetIndex !== null) {
-        event.preventDefault()
-        if (direction !== snapDirection) {
-          const reversedTarget = snapTargetIndex + direction
-          if (reversedTarget >= 0 && reversedTarget < HERO_SNAP_POINTS.length) {
-            scrollToSnapPoint(
-              lenis,
-              hero.metrics,
-              hero.progress,
-              reversedTarget,
-              direction,
-            )
-          }
-        }
-        return false
-      }
-
-      const targetIndex =
-        direction > 0
-          ? HERO_SNAP_POINTS.findIndex(
-              (point) => point > hero.progress + HERO_SNAP_EPSILON,
-            )
-          : HERO_SNAP_POINTS.findLastIndex(
-              (point) => point < hero.progress - HERO_SNAP_EPSILON,
-            )
-
-      if (targetIndex === -1) return
-      event.preventDefault()
-      scrollToSnapPoint(
-        lenis,
-        hero.metrics,
-        hero.progress,
-        targetIndex,
-        direction,
-      )
-      return false
-    }
-
-    lenis = reducedMotion.matches
-      ? null
-      : new Lenis({
-          autoRaf: true,
-          virtualScroll: onVirtualScroll,
-        })
-
-    lenisRef.current = lenis
-    if (lenis) {
-      lenis.on('scroll', requestUpdate)
-    }
-
-    updateProgress()
-    window.addEventListener('scroll', requestUpdate, { passive: true })
-    window.addEventListener('resize', requestUpdate)
-    window.visualViewport?.addEventListener('resize', requestUpdate)
-    window.visualViewport?.addEventListener('scroll', requestUpdate)
-    return () => {
-      window.removeEventListener('scroll', requestUpdate)
-      window.removeEventListener('resize', requestUpdate)
-      window.visualViewport?.removeEventListener('resize', requestUpdate)
-      window.visualViewport?.removeEventListener('scroll', requestUpdate)
-      if (measureFrame) window.cancelAnimationFrame(measureFrame)
-      if (lenis) {
-        lenis.off('scroll', requestUpdate)
-        lenis.destroy()
-      }
-      if (lenisRef.current === lenis) lenisRef.current = null
-    }
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePreference = () => setReducedMotion(query.matches)
+    updatePreference()
+    query.addEventListener('change', updatePreference)
+    return () => query.removeEventListener('change', updatePreference)
   }, [])
 
-  const setStage = (index) => {
-    if (!trackRef.current) return
-    const rect = trackRef.current.getBoundingClientRect()
-    const trackTop = window.scrollY + rect.top
-    const distance = rect.height - getViewportHeight()
-    const top = trackTop + HERO_STAGE_STARTS[index] * distance
-    if (lenisRef.current) {
-      const currentProgress = clampProgress(
-        (lenisRef.current.animatedScroll - trackTop) / distance,
-      )
-      lenisRef.current.scrollTo(top, {
-        duration: getHeroSnapDuration(
-          currentProgress,
-          HERO_STAGE_STARTS[index],
-        ),
-        easing: HERO_SNAP_EASING,
-      })
-    } else {
-      window.scrollTo({
-        top,
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 'auto'
-          : 'smooth',
-      })
-    }
+  const setStage = (stage) => {
+    commandId.current += 1
+    setCommand({ id: commandId.current, stage })
+  }
+
+  const moveStage = (direction) => {
+    setCommand((current) => {
+      commandId.current += 1
+      return {
+        id: commandId.current,
+        stage: (current.stage + direction + stages.length) % stages.length,
+      }
+    })
+  }
+
+  const handleStageChange = (stage) => {
+    setActiveStage(stage)
+    setCommand((current) => ({ ...current, stage }))
   }
 
   return (
-    <section className="hero-track" ref={trackRef} aria-label="The M-LINX plant-to-customer story">
+    <section className="hero-track" aria-label="The M-LINX connected route">
       <div className={`hero-frame stage-${activeStage + 1}`}>
         <div className="hero" aria-live="polite">
           <div className="hero-kicker">
@@ -442,36 +254,55 @@ function HomeHero() {
           <Canvas
             shadows
             dpr={[1, 1.6]}
-            gl={{ antialias: true, alpha: true }}
-            camera={{ position: [-9, 9, 12], fov: 35 }}
+            gl={{
+              antialias: true,
+              alpha: true,
+              powerPreference: 'high-performance',
+            }}
+            camera={{ position: [17, 17, 22], fov: 33 }}
           >
             <Suspense fallback={null}>
-              <RouteWorld scrollProgress={scrollProgress} />
-              <Environment preset="city" environmentIntensity={0.22} />
+              <RouteWorld
+                command={command}
+                onStageChange={handleStageChange}
+                reducedMotion={reducedMotion}
+              />
+              <Environment preset="city" environmentIntensity={0.3} />
             </Suspense>
           </Canvas>
         </div>
 
-        <StageNav
-          activeStage={activeStage}
-          scrollProgress={scrollProgress}
-          setStage={setStage}
-        />
+        <button
+          className="route-control route-control-previous"
+          type="button"
+          onClick={() => moveStage(-1)}
+          aria-label={`Fast-forward around the route to the previous stop, ${
+            stages[(command.stage - 1 + stages.length) % stages.length].label
+          }`}
+        >
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M45.8 8.7C50.7 5.9 56.8 9.4 56.8 15v34c0 5.6-6.1 9.1-11 6.3L16.4 38.2c-4.8-2.8-4.8-9.6 0-12.4L45.8 8.7Z" />
+          </svg>
+        </button>
+        <button
+          className="route-control route-control-next"
+          type="button"
+          onClick={() => moveStage(1)}
+          aria-label={`Fast-forward to the next stop, ${
+            stages[(command.stage + 1) % stages.length].label
+          }`}
+        >
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M18.2 8.7C13.3 5.9 7.2 9.4 7.2 15v34c0 5.6 6.1 9.1 11 6.3l29.4-17.1c4.8-2.8 4.8-9.6 0-12.4L18.2 8.7Z" />
+          </svg>
+        </button>
 
-        <div className="scroll-hint">
-          <span className="desktop-scroll-copy">
-            {activeStage === stages.length - 1 ? 'Keep exploring' : 'Follow the journey'}
-          </span>
-          <span className="mobile-scroll-copy">
-            {activeStage === stages.length - 1 ? 'Keep scrolling' : 'Swipe to progress'}
-          </span>
-          <svg className="desktop-scroll-icon" viewBox="0 0 20 30" aria-hidden="true">
-            <rect x="1" y="1" width="18" height="28" rx="9" />
-            <circle cx="10" cy="8" r="2" />
-          </svg>
-          <svg className="mobile-scroll-icon" viewBox="0 0 18 24" aria-hidden="true">
-            <path d="M9 2v17M4.5 14.5 9 19l4.5-4.5" />
-          </svg>
+        <RouteStageNav activeStage={activeStage} setStage={setStage} />
+
+        <div className="route-readout" aria-hidden="true">
+          <span>Live route</span>
+          <strong>{stages[activeStage].label}</strong>
+          <i />
         </div>
 
         <div className="hero-proof">
@@ -480,10 +311,10 @@ function HomeHero() {
         </div>
       </div>
       <Loader
-        containerStyles={{ background: '#dcdddb' }}
-        innerStyles={{ width: '160px', height: '2px', background: '#b8bbb9' }}
-        barStyles={{ background: '#555a5c', height: '2px' }}
-        dataStyles={{ color: '#34383a', fontFamily: 'Arial, sans-serif', fontSize: '10px' }}
+        containerStyles={{ background: '#dfe9e5' }}
+        innerStyles={{ width: '160px', height: '2px', background: '#b9cbc4' }}
+        barStyles={{ background: '#14282d', height: '2px' }}
+        dataStyles={{ color: '#14282d', fontFamily: 'Arial, sans-serif', fontSize: '10px' }}
       />
     </section>
   )
