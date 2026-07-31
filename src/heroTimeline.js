@@ -1,33 +1,11 @@
-export const LINEN_TIMELINE = {
-  end: 0.5,
-  initialMiddleProgress: 0.03,
-  spacing: 0.03,
-  processEnd: 0.78,
-}
+export const ROUTE_STAGE_COUNT = 4
+export const ROUTE_STAGE_SPACING = 6
+export const ROUTE_LENGTH = ROUTE_STAGE_COUNT * ROUTE_STAGE_SPACING
+export const ROUTE_CRUISE_SPEED = 0.72
+export const ROUTE_PAUSE_SECONDS = 10
+export const DISC_RADIUS = 9.35
 
-export const LOADED_TRUCKS_PROGRESS = LINEN_TIMELINE.end
-
-export const TRUCK_TIMELINE = {
-  middleDeparture: 0.56,
-  departureSpacing: 0.02,
-  driveEnd: 0.89,
-}
-
-export const HERO_STAGE_STARTS = [
-  0,
-  LOADED_TRUCKS_PROGRESS,
-  TRUCK_TIMELINE.middleDeparture,
-]
-
-export const HERO_TIMELINE_END = 1
-export const HERO_SNAP_POINTS = [
-  0,
-  LOADED_TRUCKS_PROGRESS,
-  HERO_TIMELINE_END,
-]
-
-export const SMILEY_TIMELINE = {
-  start: 0.92,
-  end: HERO_TIMELINE_END - 0.01,
-  stagger: 0.008,
-}
+export const wrapRouteDistance = (distance) =>
+  ((distance + ROUTE_LENGTH / 2) % ROUTE_LENGTH + ROUTE_LENGTH) %
+    ROUTE_LENGTH -
+  ROUTE_LENGTH / 2
