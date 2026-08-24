@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>M-LINX MCP architecture</title>
+    <style>
+      @page {
+        size: 17in 11in;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #e8eadc;
+        color: #13282b;
+        font-family: Inter, "Liberation Sans", "Noto Sans", sans-serif;
+      }
+
+      .page {
+        width: 17in;
+        height: 11in;
+        padding: 0.36in 0.46in 0.3in;
+        display: flex;
+        flex-direction: column;
+        gap: 0.12in;
+        overflow: hidden;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        border-bottom: 1.5px solid #13282b;
+        padding-bottom: 0.09in;
+      }
+
+      .kicker {
+        font-size: 10.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(19, 40, 43, 0.62);
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+
+      .meta {
+        margin: 0;
+        text-align: right;
+        font-size: 12px;
+        color: rgba(19, 40, 43, 0.7);
+        line-height: 1.45;
+        max-width: 6.1in;
+      }
+
+      h2 {
+        margin: 0 0 4px;
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .panel {
+        background: #f4f4ea;
+        border: 1px solid rgba(19, 40, 43, 0.16);
+        border-radius: 10px;
+        padding: 8px 12px 6px;
+      }
+
+      .architecture {
+        flex: 0 0 auto;
+      }
+
+      .sequence {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .sequence svg {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div>
+          <p class="kicker">MobileCom · M-LINX</p>
+          <h1>MCP system architecture</h1>
+        </div>
+        <p class="meta">
+          Claude connects to a single M-LINX MCP server. Microsoft Entra ID
+          holds two app registrations — a client for Claude and a resource API
+          for the MCP server. The MCP server calls M-LINX after validating the
+          Entra token.
+        </p>
+      </header>
+
+      <section class="panel architecture">
+        <h2>Architecture</h2>
+        <svg viewBox="0 0 1540 328" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="System architecture">
+          <defs>
+            <marker id="arch-arrow" viewBox="0 0 10 10" refX="9.2" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+              <path d="M 0 1.2 L 10 5 L 0 8.8 Z" fill="#13282b" />
+            </marker>
+            <marker id="arch-arrow-blue" viewBox="0 0 10 10" refX="9.2" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+              <path d="M 0 1.2 L 10 5 L 0 8.8 Z" fill="#2f6f96" />
+            </marker>
+          </defs>
+
+          <rect x="390" y="6" width="760" height="148" rx="12" fill="#e7f1f7" stroke="#3d88b8" stroke-width="1.6" />
+          <text x="770" y="28" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2f6f96" letter-spacing="0.14em">MICROSOFT ENTRA ID</text>
+          <text x="770" y="46" text-anchor="middle" font-size="11" fill="#2f6f96">Two app registrations — identity plane only, not runtime hops</text>
+
+          <rect x="416" y="58" width="344" height="80" rx="8" fill="#f8fbfd" stroke="#3d88b8" stroke-width="1.25" />
+          <text x="588" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#13282b">Claude MCP Client</text>
+          <text x="588" y="101" text-anchor="middle" font-size="12" fill="#2f6f96">App registration</text>
+          <text x="588" y="121" text-anchor="middle" font-size="11" fill="rgba(19,40,43,0.68)">client_id · redirect URIs · authorization code + PKCE</text>
+
+          <rect x="780" y="58" width="344" height="80" rx="8" fill="#f8fbfd" stroke="#3d88b8" stroke-width="1.25" />
+          <text x="952" y="82" text-anchor="middle" font-size="15" font-weight="700" fill="#13282b">M-LINX MCP API</text>
+          <text x="952" y="101" text-anchor="middle" font-size="12" fill="#2f6f96">App registration</text>
+          <text x="952" y="121" text-anchor="middle" font-size="11" fill="rgba(19,40,43,0.68)">Application ID URI · audience · exposed scopes</text>
+
+          <rect x="24" y="196" width="300" height="118" rx="10" fill="#fde8e4" stroke="#f2563d" stroke-width="1.6" />
+          <text x="174" y="228" text-anchor="middle" font-size="18" font-weight="700" fill="#13282b">Claude server</text>
+          <text x="174" y="250" text-anchor="middle" font-size="12.5" fill="#b63d2c">MCP client / connector host</text>
+          <text x="174" y="276" text-anchor="middle" font-size="11.5" fill="rgba(19,40,43,0.7)">Signs the user in via the client app,</text>
+          <text x="174" y="294" text-anchor="middle" font-size="11.5" fill="rgba(19,40,43,0.7)">then calls the MCP server</text>
+
+          <rect x="620" y="196" width="300" height="118" rx="10" fill="#13282b" stroke="#13282b" stroke-width="1.6" />
+          <text x="770" y="228" text-anchor="middle" font-size="18" font-weight="700" fill="#f3f3e9">MCP Server</text>
+          <text x="770" y="250" text-anchor="middle" font-size="12.5" fill="#e9aa3c">Single node</text>
+          <text x="770" y="276" text-anchor="middle" font-size="11.5" fill="rgba(243,243,233,0.8)">OAuth metadata, token validation, and tools</text>
+          <text x="770" y="294" text-anchor="middle" font-size="11.5" fill="rgba(243,243,233,0.8)">in one service — no reverse proxy hop</text>
+
+          <rect x="1216" y="196" width="300" height="118" rx="10" fill="#f8edd4" stroke="#c48a1f" stroke-width="1.6" />
+          <text x="1366" y="228" text-anchor="middle" font-size="18" font-weight="700" fill="#13282b">M-LINX system</text>
+          <text x="1366" y="250" text-anchor="middle" font-size="12.5" fill="#8a6414">Route accounting system</text>
+          <text x="1366" y="276" text-anchor="middle" font-size="11.5" fill="rgba(19,40,43,0.7)">Business APIs called only by the</text>
+          <text x="1366" y="294" text-anchor="middle" font-size="11.5" fill="rgba(19,40,43,0.7)">MCP server after a valid token</text>
+
+          <path d="M210 196 C210 168, 430 168, 430 138" fill="none" stroke="#2f6f96" stroke-width="1.55" marker-end="url(#arch-arrow-blue)" />
+          <text x="248" y="164" font-size="11" font-weight="600" fill="#2f6f96">OAuth via client app</text>
+
+          <path d="M860 196 C860 168, 952 168, 952 138" fill="none" stroke="#2f6f96" stroke-width="1.55" marker-end="url(#arch-arrow-blue)" />
+          <text x="868" y="164" font-size="11" font-weight="600" fill="#2f6f96">Validate token for resource app</text>
+
+          <line x1="324" y1="255" x2="620" y2="255" stroke="#13282b" stroke-width="1.7" marker-end="url(#arch-arrow)" />
+          <text x="472" y="244" text-anchor="middle" font-size="11.5" font-weight="600" fill="#13282b">MCP · HTTPS + bearer</text>
+
+          <line x1="920" y1="255" x2="1216" y2="255" stroke="#13282b" stroke-width="1.7" marker-end="url(#arch-arrow)" />
+          <text x="1068" y="244" text-anchor="middle" font-size="11.5" font-weight="600" fill="#13282b">M-LINX APIs</text>
+        </svg>
+      </section>
+
+      <section class="panel sequence">
+        <h2>Sequence</h2>
+        <svg viewBox="0 0 1540 568" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Authorization and tool-call sequence">
+          <defs>
+            <marker id="seq-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M 0 1.4 L 10 5 L 0 8.6 Z" fill="#13282b" />
+            </marker>
+            <marker id="seq-arrow-open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M 1 1.4 L 9 5 L 1 8.6" fill="none" stroke="#13282b" stroke-width="1.4" />
+            </marker>
+          </defs>
+
+          <rect x="72" y="6" width="196" height="40" rx="7" fill="#fde8e4" stroke="#f2563d" />
+          <text x="170" y="32" text-anchor="middle" font-size="14" font-weight="700">Claude server</text>
+          <line x1="170" y1="46" x2="170" y2="558" stroke="rgba(19,40,43,0.22)" stroke-width="1.2" stroke-dasharray="3 5" />
+
+          <rect x="452" y="6" width="196" height="40" rx="7" fill="#13282b" />
+          <text x="550" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#f3f3e9">MCP Server</text>
+          <line x1="550" y1="46" x2="550" y2="558" stroke="rgba(19,40,43,0.22)" stroke-width="1.2" stroke-dasharray="3 5" />
+
+          <rect x="812" y="6" width="236" height="40" rx="7" fill="#e7f1f7" stroke="#3d88b8" />
+          <text x="930" y="32" text-anchor="middle" font-size="14" font-weight="700">Microsoft Entra ID</text>
+          <line x1="930" y1="46" x2="930" y2="558" stroke="rgba(19,40,43,0.22)" stroke-width="1.2" stroke-dasharray="3 5" />
+
+          <rect x="1212" y="6" width="196" height="40" rx="7" fill="#f8edd4" stroke="#c48a1f" />
+          <text x="1310" y="32" text-anchor="middle" font-size="14" font-weight="700">M-LINX system</text>
+          <line x1="1310" y1="46" x2="1310" y2="558" stroke="rgba(19,40,43,0.22)" stroke-width="1.2" stroke-dasharray="3 5" />
+
+          <g font-size="12.5" fill="#13282b">
+            <line x1="178" y1="74" x2="542" y2="74" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="360" y="64" text-anchor="middle">1  MCP initialize / tools/list — no token</text>
+
+            <line x1="542" y1="106" x2="178" y2="106" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="360" y="96" text-anchor="middle">2  401 + Protected Resource Metadata → Entra</text>
+
+            <line x1="178" y1="138" x2="922" y2="138" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="550" y="128" text-anchor="middle">3  Authorize against Claude MCP Client app (PKCE, resource scopes)</text>
+
+            <rect x="178" y="154" width="744" height="28" rx="6" fill="#fff6df" stroke="rgba(196,138,31,0.45)" />
+            <text x="550" y="173" text-anchor="middle" font-size="12">4  User signs in and consents to the M-LINX MCP API app registration</text>
+
+            <line x1="922" y1="206" x2="178" y2="206" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="550" y="196" text-anchor="middle">5  Authorization code to Claude callback</text>
+
+            <line x1="178" y1="238" x2="922" y2="238" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="550" y="228" text-anchor="middle">6  POST /token + code_verifier (Claude MCP Client)</text>
+
+            <line x1="922" y1="270" x2="178" y2="270" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="550" y="260" text-anchor="middle">7  Access token — aud = M-LINX MCP API resource app</text>
+
+            <line x1="178" y1="302" x2="542" y2="302" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="360" y="292" text-anchor="middle">8  MCP initialize + Bearer token</text>
+
+            <line x1="558" y1="334" x2="922" y2="334" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="740" y="324" text-anchor="middle">9  Validate JWT (issuer, audience, scope)</text>
+
+            <line x1="922" y1="366" x2="558" y2="366" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="740" y="356" text-anchor="middle">10  Token valid</text>
+
+            <line x1="542" y1="398" x2="178" y2="398" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="360" y="388" text-anchor="middle">11  Initialize result + tool list</text>
+
+            <line x1="178" y1="430" x2="542" y2="430" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="360" y="420" text-anchor="middle">12  tools/call</text>
+
+            <line x1="558" y1="462" x2="1302" y2="462" stroke="#13282b" stroke-width="1.35" marker-end="url(#seq-arrow)" />
+            <text x="930" y="452" text-anchor="middle">13  Business API request</text>
+
+            <line x1="1302" y1="494" x2="558" y2="494" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="930" y="484" text-anchor="middle">14  API response</text>
+
+            <line x1="542" y1="526" x2="178" y2="526" stroke="#13282b" stroke-width="1.25" stroke-dasharray="5 3.5" marker-end="url(#seq-arrow-open)" />
+            <text x="360" y="516" text-anchor="middle">15  Tool result</text>
+          </g>
+        </svg>
+      </section>
+    </div>
+  </body>
+</html>
